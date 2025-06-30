@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Homepage</title>
+  <style>
+    body {
+      background: #f4f5f7;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .btn-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      align-items: center;
+    }
+    .login-btn {
+      background: #156fe0;
+      color: #fff;
+      border: none;
+      border-radius: 18px;
+      font-size: 1.3em;
+      padding: 18px 50px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+      text-decoration: none;
+      text-align: center;
+      min-width: 250px;
+    }
+    .login-btn:hover {
+      background: #125bb5;
+    }
+  </style>
+</head>
+<body>
+  <div class="btn-container">
+    <a href="/login_user" class="login-btn">Login User</a>
+    <a href="/login_admin" class="login-btn">Login Admin</a>
+  </div>
+</body>
+</html>

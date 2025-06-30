@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Dashboard - Indian Agricultural Market</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_dashboard.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>User Dashboard - Indian Agricultural Market</h1>
+            <p>Explore Indian agricultural market data and forecasts.</p>
+        </header>
+
+        <div class="grid">
+            <a href="/map" class="btn">
+                <div class="icon">🗺️</div>
+                <div class="label">View Product Map</div>
+            </a>
+
+            <a href="/database" class="btn">
+                <div class="icon">🗃️</div>
+                <div class="label">View Product Database</div>
+            </a>
+
+            <a href="/graph3" class="btn">
+                <div class="icon">📈</div>
+                <div class="label">Price Trends by Region</div>
+            </a>
+
+            <a href="/forecast" class="btn">
+                <div class="icon">🔮</div>
+                <div class="label">Forecast Future Prices</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html> 

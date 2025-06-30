@@ -1,0 +1,116 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='style_for.css') }}">
+
+<div class="container">
+  <h2>Agricultural Product Forecast</h2>
+  <form method="get" action="/forecast">
+    <label for="product">Choose a product:</label>
+    <select name="product" onchange="this.form.submit()">
+      <option disabled selected value> -- select -- </option>
+      {% for p in products %}
+        <option value="{{ p }}" {% if selected == p %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if message %}
+  <p style="color: red;">{{ message }}</p>
+  {% endif %}
+
+  {% if data %}
+  <canvas id="forecastChart" style="height: 500px;"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const forecastData = {{ data|tojson|safe }}; 
+    const labels = [...new Set(forecastData.map(d => d.ds))];
+
+    const historical = forecastData.filter(d => d.tipo === 'storico');
+    const forecast = forecastData.filter(d => d.tipo === 'previsione');
+
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Historical',
+            data: labels.map(label => {
+              const d = historical.find(p => p.ds === label);
+              return d ? d.y : null;
+            }),
+            borderColor: 'gray',
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'Forecast',
+            data: labels.map(label => {
+              const d = forecast.find(p => p.ds === label);
+              return d ? d.y : null;
+            }),
+            borderColor: 'blue',
+            fill: false,
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              font: {
+                size: 12,
+                style: 'italic'
+              }
+            }
+          },
+          title: {
+            display: true,
+            text: 'Price Trend and Forecast',
+            font: {
+              size: 16
+            },
+            padding: {
+              top: 10,
+              bottom: 30
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              callback: function(value, index, ticks) {
+                const rawDate = this.getLabelForValue(value);
+                const dateObj = new Date(rawDate);
+                return dateObj.toLocaleDateString('en-GB'); // formato numerico: dd/mm/yyyy
+              },
+              maxRotation: 30,
+              minRotation: 0
+            },
+            title: {
+              display: true,
+              text: 'Date',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Price (Rs)',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+  {% endif %}
+</div>

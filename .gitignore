@@ -1,0 +1,17 @@
+
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Modelli e dati
+models/
+*.joblib
+*.pkl
+
+venv/
+*secret*.*
+credentials.json
+
+

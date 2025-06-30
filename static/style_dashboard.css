@@ -1,0 +1,35 @@
+
+body {
+    font-family: Arial, sans-serif;
+    padding: 40px;
+    text-align: center;
+    background-color: #f4f4f4;
+}
+
+h2 {
+    margin-bottom: 40px;
+    color: #333;
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.btn {
+    display: inline-block;
+    padding: 16px 24px;
+    background-color: #2196F3;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #0b7dda;
+}
