@@ -13,5 +13,5 @@ models/
 venv/
 *secret*.*
 credentials.json
-
+.venv 
 

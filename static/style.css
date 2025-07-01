@@ -42,3 +42,34 @@ button {
 button:hover {
     background-color: #218838;
 }
+
+/* 🔴 Messaggio di errore */
+.error-msg {
+    background-color: #ffe6e6;
+    color: #b30000;
+    padding: 12px 20px;
+    border: 1px solid #ff9999;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 600;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+/* 👁️ Bottone mostra/nascondi password */
+.password-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #555;
+}

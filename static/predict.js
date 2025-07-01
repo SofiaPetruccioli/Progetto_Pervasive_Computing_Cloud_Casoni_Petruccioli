@@ -15,5 +15,5 @@ document.getElementById('predictForm').addEventListener('submit', async function
     });
 
     const result = await response.json();
-    document.getElementById('result').textContent = 'Prezzo Modal Predetto: ' + result.predicted_modal_price.toFixed(2);
+    document.getElementById('result').textContent = 'Modal price predicted: ' + result.predicted_modal_price.toFixed(2);
 });

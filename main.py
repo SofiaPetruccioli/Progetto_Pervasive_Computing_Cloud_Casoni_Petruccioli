@@ -160,13 +160,23 @@ def graph():
 def database():
     db = firestore.Client.from_service_account_json('credentials.json')
     docs = db.collection('commodities').stream()
+    
     dati = []
+    max_rows = 500
+
     for doc in docs:
         contenuto = doc.to_dict()
         readings = contenuto.get('readings', [])
         for r in readings:
+            if len(dati) >= max_rows:
+                break  # Ferma se abbiamo raggiunto 500 righe
             r['sensor'] = doc.id
             dati.append(r)
+        if len(dati) >= max_rows:
+            break  # Ferma anche l'iterazione sui documenti
+
+    return render_template('database.html', dati=dati)
+
 
     return render_template('database.html', dati=dati)
 
@@ -418,8 +428,6 @@ def train_all_models(model_dir='models', min_points=20):
         model.fit(ts)
         path = os.path.join(model_dir, f"prophet_{commodity.replace(' ', '_')}.joblib")
         dump(model, path)
-
-
 
 if __name__ == '__main__':
 
