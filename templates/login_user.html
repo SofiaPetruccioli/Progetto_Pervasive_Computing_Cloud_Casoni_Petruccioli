@@ -3,41 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Login User</title>
-  <style>
-    body { background: #f4f5f7; font-family: 'Lato', Arial, sans-serif; }
-    .login-box {
-      background: #fff;
-      border-radius: 30px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      padding: 40px 30px;
-      margin: 60px auto;
-      max-width: 400px;
-      text-align: center;
-    }
-    .login-title { font-size: 1.4em; color: #156fe0; margin-bottom: 30px; font-weight: 600; }
-    .form-input {
-      width: 90%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 1em;
-    }
-    .login-btn {
-      background: #156fe0;
-      color: #fff;
-      border: none;
-      border-radius: 18px;
-      font-size: 1.1em;
-      padding: 14px 30px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 20px;
-      width: 80%;
-      transition: background 0.2s;
-    }
-    .login-btn:hover { background: #125bb5; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
 </head>
 <body>
   <div class="login-box">

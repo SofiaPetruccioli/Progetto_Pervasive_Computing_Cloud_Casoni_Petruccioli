@@ -3,36 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>User Dashboard - Indian Agricultural Market</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style_dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>User Dashboard - Indian Agricultural Market</h1>
-            <p>Explore Indian agricultural market data and forecasts.</p>
-        </header>
-
-        <div class="grid">
-            <a href="/map" class="btn">
-                <div class="icon">🗺️</div>
-                <div class="label">View Product Map</div>
-            </a>
-
-            <a href="/database" class="btn">
-                <div class="icon">🗃️</div>
-                <div class="label">View Product Database</div>
-            </a>
-
-            <a href="/graph3" class="btn">
-                <div class="icon">📈</div>
-                <div class="label">Price Trends by Region</div>
-            </a>
-
-            <a href="/forecast" class="btn">
-                <div class="icon">🔮</div>
-                <div class="label">Forecast Future Prices</div>
-            </a>
-        </div>
+  <h1 style="text-align:center; color:#2196F3; font-size:3em; margin-top:40px; margin-bottom:10px; font-weight:600; letter-spacing:1px;">Welcome</h1>
+  <div class="dashboard-grid">
+    <div class="main-box">
+      <div class="main-title">Product Map</div>
+      <a href="/map" class="main-btn">View Product Map</a>
     </div>
+    <div class="main-box">
+      <div class="main-title">Product Database</div>
+      <a href="/database" class="main-btn">View Product Database</a>
+    </div>
+    <div class="main-box">
+      <div class="main-title">Price Trends</div>
+      <a href="/graph3" class="main-btn">View Price Trends</a>
+    </div>
+    <div class="main-box">
+      <div class="main-title">Forecast Prices</div>
+      <a href="/forecast" class="main-btn">Forecast Future Prices</a>
+    </div>
+  </div>
 </body>
 </html> 
