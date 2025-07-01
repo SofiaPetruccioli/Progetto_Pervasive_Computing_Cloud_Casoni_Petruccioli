@@ -28,7 +28,7 @@
         document.addEventListener("DOMContentLoaded", function() {
             map = L.map('mapid').setView([22.5937, 78.9629], 5);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            // Popola il menu prodotti
+            // Populate the product menu
             fetch('/getmapdata').then(r => r.json()).then(data => {
                 const select = document.getElementById('productSelect');
                 Object.keys(data).forEach(prod => {
@@ -45,7 +45,7 @@
                     const regions = data[product];
                     regions.forEach(r => {
                         const marker = L.marker(r.coords).addTo(map)
-                            .bindPopup(`<a href='/graph_map?product=${encodeURIComponent(prodotto)}&state=${encodeURIComponent(r.state)}'>${r.state}</a>`);
+                            .bindPopup(`<a href='/graph_map?product=${encodeURIComponent(product)}&state=${encodeURIComponent(r.state)}'>${r.state}</a>`);
                         markers.push(marker);
                     });
                 });
