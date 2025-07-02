@@ -54,9 +54,10 @@ def login_admin():
     return render_template('login_admin.html')
 
 @app.route('/logout_admin')
+@login_required
 def logout_admin():
     logout_user()
-    return redirect('/login_admin')
+    return render_template('homepage.html')
 
 @app.route('/login_user', methods=['GET', 'POST'])
 def user_login():
@@ -70,9 +71,10 @@ def user_login():
     return render_template('login_user.html')
 
 @app.route('/logout_user')
+@login_required
 def user_logout():
     logout_user()
-    return redirect('/login_user')
+    return render_template('homepage.html')
 
 @app.route('/dashboard_user')
 @login_required
