@@ -14,7 +14,7 @@
     </div>
     <div class="main-box">
       <div class="main-title">Product Database</div>
-      <a href="/database" class="main-btn">View Product Database</a>
+      <a href="/arbitrage" class="main-btn">View Best Opportunities</a>
     </div>
     <div class="main-box">
       <div class="main-title">Price Trends</div>
@@ -24,6 +24,10 @@
       <div class="main-title">Forecast Prices</div>
       <a href="/forecast" class="main-btn">Forecast Future Prices</a>
     </div>
+        <div class="main-box">
+      <div class="main-title">Add Access Rights</div>
+      <a href="/register" class="main-btn">Add Access Rights</a>
+    </div>
     <div class="main-box">
       <div class="main-title">Update Forecast Models</div>
       <a href="#" class="main-btn" onclick="update_modelli(); return false;">Update Models</a>
@@ -31,7 +35,7 @@
     </div>
   </div>
   <script>
-    function updateModels() {
+    function update_modelli() {
       const message = document.getElementById('updateMessage');
       message.textContent = "⏳ Updating models... Please wait.";
       fetch('/aggiorna_modelli')
@@ -45,5 +49,8 @@
     }
   </script>
 <a href="/logout_admin" class="logout-btn">Logout</a>
+
+
+</script>
 </body>
 </html>

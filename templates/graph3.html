@@ -12,12 +12,20 @@
   <div class="container">
     <h2>Agricultural Product Prices</h2>
     <div id="info">Click on legend labels to drill down.</div>
+    <!-- Sezione superiore con select e bottoni -->
+    <div class="top-controls">
+  <div class="select-group">
     <label for="productSelect">Select a product:</label>
     <select id="productSelect">
       <option value="" disabled selected>— Choose Product —</option>
     </select>
-    <button id="backButton">Back to Previous level</button>
-    <button id="resetButton" style="display: none; margin-left: 10px;">Back to Base view</button>
+  </div>
+  <button id="backButton">Back to Previous level</button>
+  <button id="resetButton" style="display: none;">Back to Base view</button>
+</div>
+
+
+    <!-- Titolo del livello corrente -->
     <div id="levelTitle">Indian Market of “…”</div>
 
     <div class="chart-wrapper">
@@ -310,6 +318,19 @@
 
 
 <a href="/logout_admin" class="logout-btn">Logout</a>
+
+<button onclick="goBackAndReload()" class="back-btn">⬅️ Back to Previous Page</button>
+
+<script>
+  function goBackAndReload() {
+    const referrer = document.referrer;
+    if (referrer) {
+      window.location.href = referrer;  // forza caricamento pagina precedente (con refresh)
+    } else {
+      window.history.back(); // fallback
+    }
+  }
+</script>
 
 </body>
 </html>

@@ -194,3 +194,55 @@ h1, .main-title {
 .back-btn:hover {
   background-color: #1976D2;
 }
+
+
+.success-msg {
+  background-color: #e6ffe6;
+  color: #2e7d32;
+  padding: 12px 20px;
+  border: 1px solid #8bc34a;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+select {
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  padding: 6px 12px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background-color: #d9effc;
+  color: #161515;
+  margin-bottom: 1rem;
+  min-width: 200px;
+  text-align: left;
+  display: block;
+  font-weight: bold;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+select:focus {
+  outline: none;
+  border-color: #64a7e0;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); /* azzurro soft */
+  background-color: #e9f4fb;
+}
+
+select option {
+  font-weight: bold;
+  font-size: 1rem;
+  padding: 8px;
+  color: #222;
+}
+
+/* Solo su desktop alcuni browser permettono questo */
+select option:checked {
+  font-size: 1.05rem;
+  font-weight: 700;
+  background-color: #d9effc ;
+  color: #0d47a1;
+}

@@ -1,4 +1,11 @@
-<link rel="stylesheet" href="{{ url_for('static', filename='style_for.css') }}">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forecast - Agricultural Products</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_for.css') }}">
+</head>
+<body>
 
 <div class="container">
   <h2>Agricultural Product Forecast</h2>
@@ -13,106 +20,122 @@
   </form>
 
   {% if message %}
-  <p style="color: red;">{{ message }}</p>
+    <p style="color: red;">{{ message }}</p>
   {% endif %}
 
   {% if data %}
-  <canvas id="forecastChart" style="height: 500px;"></canvas>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    const forecastData = {{ data|tojson|safe }}; 
-    const labels = [...new Set(forecastData.map(d => d.ds))];
+    <canvas id="forecastChart" style="height: 500px;"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const forecastData = {{ data|tojson|safe }}; 
+      const labels = [...new Set(forecastData.map(d => d.ds))];
 
-    const historical = forecastData.filter(d => d.tipo === 'storico');
-    const forecast = forecastData.filter(d => d.tipo === 'previsione');
+      const historical = forecastData.filter(d => d.tipo === 'storico');
+      const forecast = forecastData.filter(d => d.tipo === 'previsione');
 
-    const ctx = document.getElementById('forecastChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Historical',
-            data: labels.map(label => {
-              const d = historical.find(p => p.ds === label);
-              return d ? d.y : null;
-            }),
-            borderColor: 'gray',
-            fill: false,
-            tension: 0.1
-          },
-          {
-            label: 'Forecast',
-            data: labels.map(label => {
-              const d = forecast.find(p => p.ds === label);
-              return d ? d.y : null;
-            }),
-            borderColor: 'blue',
-            fill: false,
-            tension: 0.1
-          }
-        ]
-      },
-      options: {
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              boxWidth: 12,
-              font: {
-                size: 12,
-                style: 'italic'
-              }
-            }
-          },
-          title: {
-            display: true,
-            text: 'Price Trend and Forecast',
-            font: {
-              size: 16
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Historical',
+              data: labels.map(label => {
+                const d = historical.find(p => p.ds === label);
+                return d ? d.y : null;
+              }),
+              borderColor: 'gray',
+              fill: false,
+              tension: 0.1
             },
-            padding: {
-              top: 10,
-              bottom: 30
+            {
+              label: 'Forecast',
+              data: labels.map(label => {
+                const d = forecast.find(p => p.ds === label);
+                return d ? d.y : null;
+              }),
+              borderColor: 'blue',
+              fill: false,
+              tension: 0.1
             }
-          }
+          ]
         },
-        scales: {
-          x: {
-            ticks: {
-              callback: function(value, index, ticks) {
-                const rawDate = this.getLabelForValue(value);
-                const dateObj = new Date(rawDate);
-                return dateObj.toLocaleDateString('en-GB'); // formato numerico: dd/mm/yyyy
-              },
-              maxRotation: 30,
-              minRotation: 0
+        options: {
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 12,
+                font: {
+                  size: 12,
+                  style: 'italic'
+                }
+              }
             },
             title: {
               display: true,
-              text: 'Date',
+              text: 'Price Trend and Forecast',
               font: {
-                size: 14,
-                weight: 'bold'
+                size: 16
+              },
+              padding: {
+                top: 10,
+                bottom: 30
               }
             }
           },
-          y: {
-            title: {
-              display: true,
-              text: 'Price (Rs)',
-              font: {
-                size: 14,
-                weight: 'bold'
+          scales: {
+            x: {
+              ticks: {
+                callback: function(value, index, ticks) {
+                  const rawDate = this.getLabelForValue(value);
+                  const dateObj = new Date(rawDate);
+                  return dateObj.toLocaleDateString('en-GB');
+                },
+                maxRotation: 30,
+                minRotation: 0
+              },
+              title: {
+                display: true,
+                text: 'Date',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Price (Rs)',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
               }
             }
           }
         }
-      }
-    });
-  </script>
+      });
+    </script>
   {% endif %}
 </div>
+
 <a href="/logout_admin" class="logout-btn">Logout</a>
 
+<a onclick="goBackAndReload()" class="back-btn">⬅️ Back to Previous Page</a>
+
+<script>
+  function goBackAndReload() {
+    const referrer = document.referrer;
+    if (referrer) {
+      window.location.href = referrer;
+    } else {
+      window.history.back();
+    }
+  }
+</script>
+
+</body>
+</html>

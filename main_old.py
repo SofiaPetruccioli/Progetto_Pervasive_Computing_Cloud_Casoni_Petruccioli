@@ -23,42 +23,20 @@ login.login_view = '/homepage'
 
 db = firestore.Client.from_service_account_json('credentials.json')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password']
-        role = request.form['role'].lower()
-
-        user_ref = db.collection('users').document(username)
-        if user_ref.get().exists:
-            return render_template('register.html', message="❌ Username already exists.")
-
-        user_ref.set({
-            "username": username,
-            "password": password,  # in chiaro come richiesto
-            "role": role
-        })
-
-        return render_template('register.html', success=f"✅ User '{username}' registered successfully!")
-
-    return render_template('register.html')
-
-
 class User(UserMixin):
-    def __init__(self, username, role='user'):
+    def __init__(self, username):
         self.id = username
-        self.role = role
 
+users = {"admin": "admin123"}
+users_user = {"user": "user123"}  
 
 @login.user_loader
 def load_user(username):
-    doc = db.collection('users').document(username).get()
-    if doc.exists:
-        data = doc.to_dict()
-        return User(username, role=data.get('role', 'user'))
+    if username in users:
+        return User(username)
+    if username in users_user:
+        return User(username)
     return None
-
 
 
 
@@ -72,18 +50,11 @@ def login_admin():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
-        doc = db.collection('users').document(username).get()
-        if doc.exists:
-            user = doc.to_dict()
-            if user.get('password') == password and user.get('role') == 'admin':
-                login_user(User(username, role='admin'))
-                return redirect('/dashboard')
-        
+        if username in users and users[username] == password:
+            login_user(User(username))
+            return redirect('/dashboard')
         return render_template('login_admin.html', error="Invalid credentials")
-    
     return render_template('login_admin.html')
-
 
 @app.route('/logout_admin')
 @login_required
@@ -96,18 +67,11 @@ def user_login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
-        doc = db.collection('users').document(username).get()
-        if doc.exists:
-            user = doc.to_dict()
-            if user.get('password') == password and user.get('role') == 'user':
-                login_user(User(username, role='user'))
-                return redirect('/dashboard_user')
-
+        if username in users_user and users_user[username] == password:
+            login_user(User(username))
+            return redirect('/dashboard_user')
         return render_template('login_user.html', error="Invalid credentials")
-
     return render_template('login_user.html')
-
 
 @app.route('/logout_user')
 @login_required
