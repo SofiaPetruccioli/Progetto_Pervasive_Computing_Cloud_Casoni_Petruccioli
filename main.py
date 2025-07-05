@@ -11,6 +11,9 @@ import joblib
 import pandas as pd
 from prophet import Prophet
 from joblib import dump
+from itertools import combinations
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
@@ -85,6 +88,7 @@ def dashboard_user():
 @login_required
 def dashboard():
     return render_template('dashboard.html')
+
 @app.route('/map')
 @login_required
 def map_page():
@@ -179,9 +183,6 @@ def database():
 
     return render_template('database.html', dati=dati)
 
-
-    return render_template('database.html', dati=dati)
-
 @app.route('/sensors/<sensor>', methods=['GET'])
 @login_required
 def read(sensor):
@@ -224,7 +225,7 @@ def new_data(sensor):
 @app.route('/getmapdata')
 @login_required
 def get_map_data():
-        # Centroidi approssimati degli stati indiani (nome: [lat, lon])
+        # Approximate centroids of Indian states (name: [lat, lon])
     state_coords = {
         'Andhra Pradesh': [15.9129, 79.74],
         'Arunachal Pradesh': [28.218, 94.7278],
@@ -398,7 +399,7 @@ from flask import Flask, jsonify
 
 @app.route('/aggiorna_modelli')
 def aggiorna_modelli():
-    train_all_models()  # Chiama la tua funzione
+    train_all_models()  # Chiama la funzione
     return jsonify({'message': 'Modelli aggiornati con successo'})  # Risposta JSON al client
 
 def train_all_models(model_dir='models', min_points=20):
@@ -431,7 +432,89 @@ def train_all_models(model_dir='models', min_points=20):
         path = os.path.join(model_dir, f"prophet_{commodity.replace(' ', '_')}.joblib")
         dump(model, path)
 
+def train_arbitrage_model():
+    selected_products = ["Wheat", "Rice", "Carrots"]
+    records = []
+    docs = db.collection('commodities').stream()
+    for doc in docs:
+        content = doc.to_dict()
+        for r in content.get('readings', []):
+            try:
+                if r['commodity_name'] not in selected_products:
+                    continue
+                records.append({
+                    'date': r['date'],
+                    'commodity_name': r['commodity_name'],
+                    'state': r['state'],
+                    'district': r['district'],
+                    'market': r['market'],
+                    'min_price': float(r['min_price']),
+                    'max_price': float(r['max_price']),
+                    'modal_price': float(r['modal_price'])
+                })
+            except Exception:
+                continue
+    df = pd.DataFrame(records)
+    print(f"Total records: {len(df)}")
+    pairs = []
+    for (product, date), group in df.groupby(['commodity_name', 'date']):
+        markets = group['market'].tolist()
+        prices = group['modal_price'].tolist()
+        min_prices = group['min_price'].tolist()
+        max_prices = group['max_price'].tolist()
+        for i, j in combinations(range(len(markets)), 2):
+            price1, price2 = prices[i], prices[j]
+            min1, max1 = min_prices[i], max_prices[i]
+            min2, max2 = min_prices[j], max_prices[j]
+            diff = price2 - price1
+            ratio = price2 / price1 if price1 != 0 else 0
+            arbitrage = 1 if abs(diff) / min(price1, price2) > 0.1 else 0
+            profit = abs(diff)
+            profit_percent = profit / min(price1, price2) * 100 if min(price1, price2) != 0 else 0
+            pairs.append({
+                'commodity_name': product,
+                'date': date,
+                'market1': markets[i],
+                'market2': markets[j],
+                'modal_price1': price1,
+                'modal_price2': price2,
+                'min_price1': min1,
+                'max_price1': max1,
+                'min_price2': min2,
+                'max_price2': max2,
+                'diff': diff,
+                'ratio': ratio,
+                'arbitrage': arbitrage,
+                'profit': profit,
+                'profit_percent': profit_percent
+            })
+    df_pairs = pd.DataFrame(pairs)
+    print(f"Total pairs: {len(df_pairs)}")
+    print("Sample of arbitrage dataset (first 20 rows):")
+    print(df_pairs[['commodity_name','date','market1','modal_price1','market2','modal_price2','diff','arbitrage','profit','profit_percent']].head(20))
+    feature_cols = ['diff', 'ratio', 'modal_price1', 'modal_price2', 'min_price1', 'max_price1', 'min_price2', 'max_price2']
+    X = df_pairs[feature_cols]
+    y = df_pairs['arbitrage']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf.fit(X_train, y_train)
+    print("Accuracy su test set:", clf.score(X_test, y_test))
+    dump(clf, 'models/arbitrage_rf.joblib')
+    opps = df_pairs[(df_pairs['arbitrage'] == 1) & (df_pairs['profit'] > 0)]
+    print(opps[['commodity_name', 'date', 'market1', 'modal_price1', 'market2', 'modal_price2', 'profit', 'profit_percent']].sort_values('profit_percent', ascending=False).head(10))
+    return clf, df_pairs
+
+@app.route('/arbitrage')
+@login_required
+def arbitrage_page():
+    _, df_pairs = train_arbitrage_model()
+    opps = df_pairs[(df_pairs['arbitrage'] == 1) & (df_pairs['profit'] > 0)]
+    top_opps = opps.sort_values('profit_percent', ascending=False).head(50)
+    opportunities = top_opps.to_dict(orient='records')
+    return render_template('arbitrage.html', opportunities=opportunities)
+
 if __name__ == '__main__':
+    
 
     app.run(host="0.0.0.0", port=8080, debug=True)
 
