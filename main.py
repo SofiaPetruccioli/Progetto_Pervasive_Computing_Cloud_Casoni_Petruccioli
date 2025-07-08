@@ -51,6 +51,7 @@ class User(UserMixin):
         self.role = role
 
 
+
 @login.user_loader
 def load_user(username):
     doc = db.collection('users').document(username).get()
@@ -526,8 +527,10 @@ def train_arbitrage_model():
             })
     df_pairs = pd.DataFrame(pairs)
     print(f"Total pairs: {len(df_pairs)}")
+    #debug
     print("Sample of arbitrage dataset (first 20 rows):")
     print(df_pairs[['commodity_name','date','market1','modal_price1','market2','modal_price2','diff','arbitrage','profit','profit_percent']].head(20))
+    #end debug
     feature_cols = ['diff', 'ratio', 'modal_price1', 'modal_price2', 'min_price1', 'max_price1', 'min_price2', 'max_price2']
     X = df_pairs[feature_cols]
     y = df_pairs['arbitrage']

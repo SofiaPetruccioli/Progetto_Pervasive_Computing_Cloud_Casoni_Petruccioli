@@ -3,7 +3,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
-  background-color: #9d9898d3;
+  background: linear-gradient(120deg, #e0eafc, #cfdef3);;
   color: #1c1b1b;
 }
 
@@ -27,23 +27,7 @@ label {
 }
 
 
-.top-controls {
-  display: flex;
-  align-items: flex-end;
-  gap: 20px;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
 
-.select-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.button-container {
-  display: flex;
-  gap: 10px;
-}
 
 #productSelect {
   padding: 6px 10px;
@@ -83,7 +67,6 @@ label {
 /* ------------------- Main Container ------------------- */
 .container {
   background: white;
-  height: 90vh;
   padding: 2em;
   max-width: 1800px;
   margin: auto;
@@ -92,6 +75,7 @@ label {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #0056b3;
+  min-height: 200px; /* opzionale: altezza minima */
 }
 
 /* ------------ Flex Container per Grafico e Statistiche ------------ */
@@ -148,21 +132,22 @@ label {
 
 /* ------------ Contenitore Legenda (sotto grafico) ------------ */
 .legend-wrapper {
-  width: 100%;
-  background: #ffffff;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0 auto 20px auto;
+  background: #fff;
   border-radius: 8px;
   padding: 10px 0;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-top: 20px;
 }
-
 .custom-legend {
-  list-style: none;
-  padding: 0;
-  margin: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  gap: 10px 20px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .custom-legend li {
@@ -242,7 +227,7 @@ select {
   background-color: #d9effc;
   color: #161515;
   margin-bottom: 1rem;
-  min-width: 200px;
+  max-width: 50px;
   text-align: left;
   display: block;
   font-weight: bold;
@@ -273,18 +258,6 @@ select option:checked {
 
 
 
-.top-controls {
-  display: flex;
-  align-items: flex-end;
-  gap: 15px;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.select-group {
-  display: flex;
-  flex-direction: column;
-}
 
 #productSelect {
   padding: 6px 12px;

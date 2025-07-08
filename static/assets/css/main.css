@@ -90,7 +90,8 @@ h1, .main-title {
 }
 
 .container {
-  max-width: 800px;
+  max-width: 1000px;
+  min-width: 800px;
   margin: 40px auto;
   background: #fff;
   border-radius: 16px;
