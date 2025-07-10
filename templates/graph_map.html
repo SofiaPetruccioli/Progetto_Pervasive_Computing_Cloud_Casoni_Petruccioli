@@ -2,198 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Grafico prodotto e stato</title>
+  <title>Indian Market of Agricultural Product</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-  <style>
-    /* --------------- General Page Styles --------------- */
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      margin: 0;
-      background-color: #97e59fd3;
-      color: #1c1b1b;
-    }
-    h2 {
-      margin-bottom: 10px;
-      text-align: center;
-      font-size: 1.8rem;
-      color: #335c14;
-    }
-    #info {
-      margin-bottom: 10px;
-      font-style: italic;
-      text-align: center;
-      color: #555;
-    }
-    label {
-      font-weight: bold;
-      margin-right: 8px;
-    }
-    select {
-      font-family: Arial;
-      font-size: 1rem;
-      padding: 6px 12px;
-      border: 1px solid #bbb;
-      border-radius: 4px;
-      background: #0cc32b;
-      color: #161515;
-      margin-bottom: 1rem;
-      min-width: 200px;
-    }
-    select:focus {
-      outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-    }
-    #backButton {
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      margin-bottom: 1rem;
-      display: none; /* nascosto fino al drill */
-      transition: background-color 0.2s ease;
-    }
-    #backButton:hover {
-      background-color: #0056b3;
-    }
-    #backButton:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(0,123,255,0.5);
-    }
-    #levelTitle {
-      font-size: 1.5rem;
-      font-weight: bold;
-      margin-bottom: 16px;
-      text-align: center;
-      color: #335c14;
-    }
-
-    /* ------------ Flex Container per Grafico e Statistiche ------------ */
-    .chart-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      gap: 20px;
-      /* larghezza fissa complessiva: canvas 800px + gap 20px + stats 240px ≃ 1060px */
-      max-width: 1200px;
-      margin: 0 auto 20px; /* centro e spazio sotto */
-    }
-    /* ------------ Area Grafico (canvas) ------------ */
-    .chart-area {
-      flex: 0 0 1000px; /* width fissa 800px */
-    }
-    #priceChart {
-      display: block;
-      margin: 0 auto;
-      width: 1000px;   /* ← width fissa */
-      height: 400px;  /* ← altezza fissa */
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    /* ------------ Box Statistiche (affiancato a dx) ------------ */
-    #stats {
-      flex: 0 0 240px; /* width fissa 240px */
-      background: #fff;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-    #stats h3 {
-      margin: 0 0 8px;
-      font-size: 1.1rem;
-      text-align: center;
-      color: #2c3e50;
-    }
-    #stats p {
-      margin: 4px 0;
-    }
-    #stats p span {
-      font-weight: bold;
-    }
-
-    /* ------------ Contenitore Legenda (sotto grafico) ------------ */
-    .legend-wrapper {
-      max-width: 1200px;  /* stessa larghezza di chart-wrapper */
-      margin: 0 auto 20px;
-      background: #ffffff;
-      border-radius: 8px;
-      padding: 10px 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .custom-legend {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .custom-legend li {
-      display: flex;
-      align-items: center;
-      margin: 0 15px 8px 15px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .custom-legend .legend-box {
-      width: 12px;
-      height: 12px;
-      margin-right: 6px;
-      border-radius: 2px;
-      border: 1px solid #ccc;
-    }
-    .custom-legend li span.label-text {
-      transition: font-weight 0.1s ease-in-out;
-      font-weight: normal;
-      color: #333;
-    }
-    .custom-legend li:hover span.label-text {
-      font-weight: bold;
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style_graph.css') }}">
 </head>
 <body>
-  <h2>Grafico prodotto e stato</h2>
-  <div id="graphContext" style="text-align:center; font-size:1.2em; color:#2196F3; margin-bottom: 1em;"></div>
-  <button id="backButton">Back to previous level</button>
-  <div id="levelTitle">Indian Market of "…"</div>
-  <div class="chart-wrapper">
-    <div class="chart-area">
-      <canvas id="priceChart" width="800" height="400"></canvas>
+  <div class="container">
+    <h2>Agricultural Product Prices</h2>
+    <div id="info">Click on legend labels to drill down.</div>
+    <div>
+      <div class="select-group">
+        <label for="productSelect">Select a product:</label>
+        <select id="productSelect">
+          <option value="" disabled selected>— Choose Product —</option>
+        </select>
+      </div>
+      <button id="backButton">Back to Previous level</button>
+      <button id="resetButton" style="display: none;">Back to Base view</button>
     </div>
-    <div id="stats">
-      <h3>Statistics</h3>
-      <p>No data</p>
+    <div id="levelTitle">Indian Market of “…”</div>
+    <div class="chart-wrapper">
+      <div class="chart-area">
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div id="stats" class="stats-box">
+        <h3>Statistics</h3>
+        <p>No data</p>
+      </div>
     </div>
-  </div>
-  <div class="legend-wrapper">
-    <ul class="custom-legend" id="chartLegend"></ul>
+    <div class="legend-wrapper" id="legendWrapper">
+      <ul class="custom-legend" id="chartLegend"></ul>
+    </div>
   </div>
   <script id="chart-data" type="application/json">
     {{ data | safe }}
   </script>
   <script>
-    // Mostra il contesto del grafico (prodotto e regione)
-    function getQueryParam(name) {
-      const url = new URL(window.location.href);
-      return url.searchParams.get(name);
-    }
-    const product = getQueryParam('product');
-    const state = getQueryParam('state');
-    document.getElementById('graphContext').textContent = `Grafico per il prodotto: ${product} nella regione: ${state}`;
+    // Parametri passati dal backend
+    const selectedProduct = {{ selected_product|tojson|safe }};
+    const selectedState = {{ selected_state|tojson|safe }};
+
     const rawData = JSON.parse(document.getElementById('chart-data').textContent);
+    const select = document.getElementById('productSelect');
     const ctx = document.getElementById('priceChart').getContext('2d');
     const backButton = document.getElementById('backButton');
+    const resetButton = document.getElementById('resetButton');
     const legendContainer = document.getElementById('chartLegend');
     const levelTitle = document.getElementById('levelTitle');
     const statsBox = document.getElementById('stats');
@@ -212,18 +66,54 @@
       return `rgb(${r},${g},${b})`;
     }
 
-    // Level 0: mostra "states" per prodotto selezionato
+    // Popola la select dei prodotti
+    Object.keys(rawData).forEach(product => {
+      const opt = document.createElement('option');
+      opt.value = product;
+      opt.text = product;
+      select.appendChild(opt);
+    });
+
+    // Seleziona automaticamente il prodotto se fornito
+    if (selectedProduct) {
+      select.value = selectedProduct;
+    }
+
+    // Funzioni di rendering (come in graph3.html)
+    function renderAggregatedChart(product) {
+      currentProduct = product;
+      currentState = null;
+      currentDistrict = null;
+      drillState = [];
+      backButton.style.display = 'none';
+      resetButton.style.display = 'none';
+      legendContainer.innerHTML = '';
+      statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
+      levelTitle.textContent = `Indian Avg. Price of ${currentProduct}`;
+
+      const averagedData = rawData[product].aggregated;
+      const datasets = [{
+        label: `${product} (Indian Avg.)`,
+        data: averagedData,
+        borderWidth: 2,
+        fill: false,
+        borderColor: 'black'
+      }];
+
+      drawChart(datasets, product, 'aggregated');
+      updateStats(datasets, 'Country');
+    }
+
     function renderChart(product) {
       currentProduct = product;
       currentState = null;
       currentDistrict = null;
       drillState = [];
       backButton.style.display = 'none';
+      resetButton.style.display = 'inline-block';
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-
-      // Titolo per livello 1 (stati)
-      levelTitle.textContent = `Indian Market of ${currentProduct}`;
+      levelTitle.textContent = `State Markets of ${currentProduct}`;
 
       const productData = rawData[product];
       const datasets = Object.entries(productData.states).map(([state, values]) => ({
@@ -233,22 +123,19 @@
         fill: false,
         borderColor: colorPool[state] || (colorPool[state] = generateColor())
       }));
+
       drawChart(datasets, product, 'state');
       updateStats(datasets, 'state');
     }
 
-    // Level 1: mostra "districts" di uno stato
     function renderDistricts(product, state) {
-      currentProduct = product;
       currentState = state;
       currentDistrict = null;
       drillState.push(() => renderChart(currentProduct));
       backButton.style.display = 'inline-block';
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-
-      // Titolo per livello 2 (distretti)
-      levelTitle.textContent = `State of ${currentState} Market of ${currentProduct}`;
+      levelTitle.textContent = `State of ${state} Market of ${product}`;
 
       const districtData = rawData[product].districts[state] || {};
       const datasets = Object.entries(districtData).map(([district, values]) => ({
@@ -258,20 +145,18 @@
         fill: false,
         borderColor: colorPool[district] || (colorPool[district] = generateColor())
       }));
+
       drawChart(datasets, product, 'district');
       updateStats(datasets, 'district');
     }
 
-    // Level 2: mostra "markets" di un distretto
     function renderMarkets(product, district) {
       currentDistrict = district;
       drillState.push(() => renderDistricts(currentProduct, currentState));
       backButton.style.display = 'inline-block';
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-
-      // Titolo per livello 3 (mercati)
-      levelTitle.textContent = `District of ${currentDistrict} Market of ${currentProduct}`;
+      levelTitle.textContent = `District of ${district} Market of ${product}`;
 
       const marketData = rawData[product].markets[district] || {};
       const datasets = Object.entries(marketData).map(([market, values]) => ({
@@ -281,26 +166,30 @@
         fill: false,
         borderColor: colorPool[market] || (colorPool[market] = generateColor())
       }));
+
       drawChart(datasets, product, 'market');
       updateStats(datasets, 'market');
     }
 
-    // drawChart: crea/aggiorna Chart.js (responsivo disattivato)
     function drawChart(datasets, product, level) {
-      if (currentChart) {
-        currentChart.destroy();
-      }
+      if (currentChart) currentChart.destroy();
       currentChart = new Chart(ctx, {
         type: 'line',
         data: { datasets },
         options: {
-          responsive: false,          // ← disattiva ridimensionamento
-          maintainAspectRatio: false,
+          responsive: true,
+          maintainAspectRatio: true,
           parsing: { xAxisKey: 'x', yAxisKey: 'y' },
           scales: {
             x: {
               type: 'time',
-              time: { unit: 'day' },
+              time: {
+                unit: 'day',
+                tooltipFormat: 'dd-MM-yyyy',
+                displayFormats: {
+                  day: 'dd-MM-yyyy'
+                }
+              },
               title: { display: true, text: 'Date' }
             },
             y: {
@@ -308,42 +197,39 @@
             }
           },
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              mode: 'nearest',
+            }
           }
         }
       });
-
-      // Costruisce la legenda HTML sottostante
+      // Costruisce la legenda HTML
+      legendContainer.innerHTML = '';
       datasets.forEach((ds, idx) => {
         const li = document.createElement('li');
         const box = document.createElement('div');
         box.className = 'legend-box';
         box.style.backgroundColor = ds.borderColor;
-
         const span = document.createElement('span');
         span.className = 'label-text';
         span.textContent = ds.label;
-
         li.appendChild(box);
         li.appendChild(span);
-
         li.addEventListener('mouseenter', () => {
-          // Mostra solo questa linea
           currentChart.setDatasetVisibility(idx, true);
           currentChart.data.datasets.forEach((d, i) => {
             if (i !== idx) currentChart.setDatasetVisibility(i, false);
           });
           currentChart.update();
         });
-
         li.addEventListener('mouseleave', () => {
-          // Ripristina tutte le linee
           currentChart.data.datasets.forEach((d, i) => {
             currentChart.setDatasetVisibility(i, true);
           });
           currentChart.update();
         });
-
         li.addEventListener('click', () => {
           if (level === 'state') {
             renderDistricts(product, ds.label);
@@ -351,22 +237,18 @@
             renderMarkets(product, ds.label);
           }
         });
-
         legendContainer.appendChild(li);
       });
     }
 
-    // updateStats: calcola min/max su tutti i punti di tutti i dataset
     function updateStats(datasets, level) {
       if (!datasets.length) {
         statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
         return;
       }
-
       let globalMin = Infinity, globalMax = -Infinity;
       let minLabel = '', maxLabel = '';
       let minDate = '', maxDate = '';
-
       datasets.forEach(ds => {
         ds.data.forEach(point => {
           const price = point.y;
@@ -383,7 +265,6 @@
           }
         });
       });
-
       statsBox.innerHTML = `
         <h3>Price Statistics</h3>
         <p>Product: <span>${currentProduct}</span></p>
@@ -393,21 +274,27 @@
       `;
     }
 
-    // Bottone "Back to previous level"
-    backButton.addEventListener('click', () => {
+    // Eventi
+    select.addEventListener('change', function() {
+      renderChart(this.value);
+    });
+    backButton.addEventListener('click', function() {
       if (drillState.length > 0) {
-        const last = drillState.pop();
-        last();
-        if (drillState.length === 0) {
-          backButton.style.display = 'none';
-        }
+        const prev = drillState.pop();
+        prev();
       }
     });
+    resetButton.addEventListener('click', function() {
+      renderChart(currentProduct);
+    });
 
-    // All'avvio, seleziona il primo prodotto e mostra il livello "state"
-    if (Object.keys(rawData).length > 0) {
-      const firstProduct = Object.keys(rawData)[0];
-      renderChart(firstProduct);
+    // Avvio automatico: se product e state sono forniti, mostra direttamente i dati dello stato
+    if (selectedProduct && selectedState && rawData[selectedProduct] && rawData[selectedProduct].states[selectedState]) {
+      select.value = selectedProduct;
+      renderDistricts(selectedProduct, selectedState);
+    } else if (selectedProduct && rawData[selectedProduct]) {
+      select.value = selectedProduct;
+      renderChart(selectedProduct);
     }
   </script>
 </body>
