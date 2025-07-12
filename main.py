@@ -10,10 +10,17 @@ import os
 import joblib
 import pandas as pd
 from prophet import Prophet
-from joblib import dump
+from joblib import dump, load
 from itertools import combinations
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from google.cloud import storage
+import tempfile
+from google.oauth2 import service_account
+
+# Percorso al file di credenziali
+CREDENTIALS_PATH = "credentials.json"
+credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_PATH)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
@@ -377,6 +384,25 @@ def graph_map():
 
 
 
+def upload_to_gcs(bucket_name, blob_name, local_path):
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.upload_from_filename(local_path)
+
+def download_from_gcs(bucket_name, blob_name, local_path):
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.download_to_filename(local_path)
+
+def model_exists_gcs(bucket_name, blob_name):
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(bucket_name)
+    return bucket.blob(blob_name).exists(client)
+
+
+
 @app.route('/forecast', methods=['GET'])
 @login_required
 def forecast_page():
@@ -403,73 +429,117 @@ def forecast_page():
     df = pd.DataFrame(records)
     ts = df.groupby('date')['modal_price'].mean().reset_index()
     ts.rename(columns={'date': 'ds', 'modal_price': 'y'}, inplace=True)
+    ts['floor'] = 0
 
-    model_path = f"models/prophet_{product.replace(' ', '_')}.joblib"
-    if not os.path.exists(model_path):
+    bucket_name = "my-forecast-models-bucket"
+    blob_name = f"models/prophet_{product.replace(' ', '_')}.joblib"
+    storage_client = storage.Client(credentials=credentials)
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    if not blob.exists(storage_client):
         if len(ts) < 20:
             return render_template('forecast.html', products=sorted(all_products), selected=product,
-                                   data=None, message=f"Insufficient number of sample for '{product}'")
-        model = Prophet()
+                                   data=None, message=f"Insufficient number of samples for '{product}'")
+
+        model = Prophet(
+            growth='linear',
+            seasonality_mode='additive',
+            changepoint_prior_scale=0.03,
+            seasonality_prior_scale=2
+        )
         model.fit(ts)
-        joblib.dump(model, model_path)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmpfile:
+            joblib.dump(model, tmpfile.name)
+            blob.upload_from_filename(tmpfile.name)
     else:
-        model = joblib.load(model_path)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmpfile:
+            blob.download_to_filename(tmpfile.name)
+            model = joblib.load(tmpfile.name)
 
     future = model.make_future_dataframe(periods=30)
+    future['floor'] = 0
     forecast = model.predict(future)[['ds', 'yhat']].tail(30)
     forecast['tipo'] = 'previsione'
     forecast.rename(columns={'yhat': 'y'}, inplace=True)
 
-    storico = ts.copy()
+    storico = ts[['ds', 'y']].copy()
     storico['tipo'] = 'storico'
 
     combined = pd.concat([storico, forecast])
+
     return render_template('forecast.html',
                            products=sorted(all_products),
                            selected=product,
                            data=combined.to_dict(orient='records'),
                            message=None)
 
-
 from flask import Flask, jsonify
 
 
 
 
+from flask import jsonify
+
 @app.route('/aggiorna_modelli')
-def aggiorna_modelli():
-    train_all_models()  # Chiama la funzione
-    return jsonify({'message': 'Modelli aggiornati con successo'})  # Risposta JSON al client
-
-def train_all_models(model_dir='models', min_points=20):
+def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models', min_points=35):
     os.makedirs(model_dir, exist_ok=True)
-    docs = db.collection('commodities').stream()
-    data = []
 
-    for doc in docs:
-        content = doc.to_dict()
-        for r in content.get('readings', []):
-            try:
-                r['commodity_name'] = r['commodity_name'].strip()
-                r['date'] = pd.to_datetime(r['date'])
-                r['modal_price'] = float(r['modal_price'])
-                data.append(r)
-            except:
+    # 1. Elimina tutti i file nella cartella models/
+    for file in os.listdir(model_dir):
+        file_path = os.path.join(model_dir, file)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    try:
+        # 2. Recupera i dati da Firestore
+        docs = db.collection('commodities').stream()
+        data = []
+        for doc in docs:
+            content = doc.to_dict()
+            for r in content.get('readings', []):
+                try:
+                    r['commodity_name'] = r['commodity_name'].strip()
+                    r['date'] = pd.to_datetime(r['date'])
+                    r['modal_price'] = float(r['modal_price'])
+                    data.append(r)
+                except:
+                    continue
+
+        # 3. Costruisci modelli Prophet e salvali su GCS
+        df = pd.DataFrame(data)
+        for commodity in df['commodity_name'].unique():
+            subset = df[df['commodity_name'] == commodity]
+            ts = subset.groupby('date')['modal_price'].mean().reset_index()
+            ts.rename(columns={'date': 'ds', 'modal_price': 'y'}, inplace=True)
+            ts['floor'] = 0
+
+            if len(ts) < min_points:
                 continue
 
-    df = pd.DataFrame(data)
-    for commodity in df['commodity_name'].unique():
-        subset = df[df['commodity_name'] == commodity]
-        ts = subset.groupby('date')['modal_price'].mean().reset_index()
-        ts.rename(columns={'date': 'ds', 'modal_price': 'y'}, inplace=True)
+            model = Prophet(
+                growth='linear',
+                seasonality_mode='additive',
+                changepoint_prior_scale=0.03,
+                seasonality_prior_scale=2
+            )
+            model.fit(ts)
 
-        if len(ts) < min_points:
-            continue
+            # salva temporaneamente e carica su GCS
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmp:
+                dump(model, tmp.name)
+                blob_name = f"models/prophet_{commodity.replace(' ', '_')}.joblib"
+                upload_to_gcs(bucket_name, blob_name, tmp.name)
 
-        model = Prophet()
-        model.fit(ts)
-        path = os.path.join(model_dir, f"prophet_{commodity.replace(' ', '_')}.joblib")
-        dump(model, path)
+        return jsonify({"status": "success", "message": "Modelli aggiornati con successo!"})
+
+    except Exception as e:
+        print("Errore durante l'aggiornamento dei modelli:", str(e))
+        return jsonify({"status": "error", "message": f"Errore durante l'aggiornamento: {str(e)}"}), 500
+     
+
+
 
 def train_arbitrage_model():
     selected_products = ["Wheat", "Rice", "Carrots"]

@@ -15,6 +15,7 @@ from itertools import combinations
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
 

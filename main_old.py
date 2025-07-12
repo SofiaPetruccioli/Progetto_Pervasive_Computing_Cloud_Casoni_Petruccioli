@@ -432,6 +432,9 @@ def train_all_models(model_dir='models', min_points=20):
         path = os.path.join(model_dir, f"prophet_{commodity.replace(' ', '_')}.joblib")
         dump(model, path)
 
+
+
+
 def train_arbitrage_model():
     selected_products = ["Wheat", "Rice", "Carrots"]
     records = []
