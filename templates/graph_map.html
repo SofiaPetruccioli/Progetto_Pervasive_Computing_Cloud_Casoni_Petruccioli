@@ -35,15 +35,13 @@
       <ul class="custom-legend" id="chartLegend"></ul>
     </div>
   </div>
-  <script id="chart-data" type="application/json">
-    {{ data | safe }}
-  </script>
+
+  <script id="chart-data" type="application/json">{{ data | safe }}</script>
   <script>
-    // Parametri passati dal backend
     const selectedProduct = {{ selected_product|tojson|safe }};
     const selectedState = {{ selected_state|tojson|safe }};
-
     const rawData = JSON.parse(document.getElementById('chart-data').textContent);
+
     const select = document.getElementById('productSelect');
     const ctx = document.getElementById('priceChart').getContext('2d');
     const backButton = document.getElementById('backButton');
@@ -57,14 +55,10 @@
     let currentProduct = null;
     let currentState = null;
     let currentDistrict = null;
-
+    let currentLevel = null;
     const colorPool = {};
-    function generateColor() {
-      const r = Math.floor(Math.random() * 200);
-      const g = Math.floor(Math.random() * 200);
-      const b = Math.floor(Math.random() * 200);
-      return `rgb(${r},${g},${b})`;
-    }
+
+    const generateColor = () => `rgb(${Math.random()*200|0},${Math.random()*200|0},${Math.random()*200|0})`;
 
     // Popola la select dei prodotti
     Object.keys(rawData).forEach(product => {
@@ -74,12 +68,93 @@
       select.appendChild(opt);
     });
 
-    // Seleziona automaticamente il prodotto se fornito
-    if (selectedProduct) {
-      select.value = selectedProduct;
+    // --- RENDERING ---
+
+    function drawChart(datasets, product, level) {
+      currentLevel = level;
+      if (currentChart) currentChart.destroy();
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          parsing: { xAxisKey: 'x', yAxisKey: 'y' },
+          scales: {
+            x: {
+              type: 'time',
+              time: { unit: 'day', tooltipFormat: 'dd-MM-yyyy', displayFormats: { day: 'dd-MM-yyyy' } },
+              title: { display: true, text: 'Date' }
+            },
+            y: {
+              title: { display: true, text: 'Average Price' }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true, mode: 'nearest' }
+          }
+        }
+      });
+
+      // Legenda interattiva
+      legendContainer.innerHTML = '';
+      datasets.forEach((ds, idx) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<div class="legend-box" style="background-color:${ds.borderColor}"></div>
+                        <span class="label-text">${ds.label}</span>`;
+
+        li.addEventListener('mouseenter', () => {
+          currentChart.data.datasets.forEach((_, i) => {
+            currentChart.setDatasetVisibility(i, i === idx);
+          });
+          currentChart.update();
+        });
+
+        li.addEventListener('mouseleave', () => {
+          currentChart.data.datasets.forEach((_, i) => {
+            currentChart.setDatasetVisibility(i, true);
+          });
+          currentChart.update();
+        });
+        
+        li.addEventListener('click', () => {
+          if (currentLevel === 'aggregated') {
+           renderChart(product);
+          } else if (currentLevel === 'state') {
+            renderDistricts(product, ds.label);
+          } else if (currentLevel === 'district') {
+            renderMarkets(product, ds.label);
+          }
+        });
+
+        
+
+        legendContainer.appendChild(li);
+      });
     }
 
-    // Funzioni di rendering (come in graph3.html)
+    function updateStats(datasets, level) {
+      if (!datasets.length) {
+        statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
+        return;
+      }
+
+      let min = Infinity, max = -Infinity, minLabel = '', maxLabel = '', minDate = '', maxDate = '';
+      datasets.forEach(ds => {
+        ds.data.forEach(p => {
+          if (p.y < min) { min = p.y; minLabel = ds.label; minDate = p.x; }
+          if (p.y > max) { max = p.y; maxLabel = ds.label; maxDate = p.x; }
+        });
+      });
+
+      statsBox.innerHTML = `
+        <h3>Price Statistics</h3>
+        <p>Product: <span>${currentProduct}</span></p>
+        <p>Level Selected: <span>${level.charAt(0).toUpperCase() + level.slice(1)}</span></p>
+        <p>Lowest Price: <span>${minLabel}</span> on <span>${minDate}</span> (${min.toFixed(2)})</p>
+        <p>Highest Price: <span>${maxLabel}</span> on <span>${maxDate}</span> (${max.toFixed(2)})</p>`;
+    }
+
     function renderAggregatedChart(product) {
       currentProduct = product;
       currentState = null;
@@ -89,7 +164,7 @@
       resetButton.style.display = 'none';
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-      levelTitle.textContent = `Indian Avg. Price of ${currentProduct}`;
+      levelTitle.textContent = `Indian Avg. Price of ${product}`;
 
       const averagedData = rawData[product].aggregated;
       const datasets = [{
@@ -99,7 +174,6 @@
         fill: false,
         borderColor: 'black'
       }];
-
       drawChart(datasets, product, 'aggregated');
       updateStats(datasets, 'Country');
     }
@@ -113,10 +187,9 @@
       resetButton.style.display = 'inline-block';
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-      levelTitle.textContent = `State Markets of ${currentProduct}`;
+      levelTitle.textContent = `State Markets of ${product}`;
 
-      const productData = rawData[product];
-      const datasets = Object.entries(productData.states).map(([state, values]) => ({
+      const datasets = Object.entries(rawData[product].states).map(([state, values]) => ({
         label: state,
         data: values,
         borderWidth: 2,
@@ -129,16 +202,16 @@
     }
 
     function renderDistricts(product, state) {
+      currentProduct = product;
       currentState = state;
       currentDistrict = null;
-      drillState.push(() => renderChart(currentProduct));
+      drillState.push(() => renderChart(product));
       backButton.style.display = 'inline-block';
+      levelTitle.textContent = `State of ${state} Market of ${product}`;
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-      levelTitle.textContent = `State of ${state} Market of ${product}`;
 
-      const districtData = rawData[product].districts[state] || {};
-      const datasets = Object.entries(districtData).map(([district, values]) => ({
+      const datasets = Object.entries(rawData[product].districts[state] || {}).map(([district, values]) => ({
         label: district,
         data: values,
         borderWidth: 2,
@@ -152,14 +225,13 @@
 
     function renderMarkets(product, district) {
       currentDistrict = district;
-      drillState.push(() => renderDistricts(currentProduct, currentState));
+      drillState.push(() => renderDistricts(product, currentState));
       backButton.style.display = 'inline-block';
+      levelTitle.textContent = `District of ${district} Market of ${product}`;
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-      levelTitle.textContent = `District of ${district} Market of ${product}`;
 
-      const marketData = rawData[product].markets[district] || {};
-      const datasets = Object.entries(marketData).map(([market, values]) => ({
+      const datasets = Object.entries(rawData[product].markets[district] || {}).map(([market, values]) => ({
         label: market,
         data: values,
         borderWidth: 2,
@@ -171,130 +243,61 @@
       updateStats(datasets, 'market');
     }
 
-    function drawChart(datasets, product, level) {
-      if (currentChart) currentChart.destroy();
-      currentChart = new Chart(ctx, {
-        type: 'line',
-        data: { datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          parsing: { xAxisKey: 'x', yAxisKey: 'y' },
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                unit: 'day',
-                tooltipFormat: 'dd-MM-yyyy',
-                displayFormats: {
-                  day: 'dd-MM-yyyy'
-                }
-              },
-              title: { display: true, text: 'Date' }
-            },
-            y: {
-              title: { display: true, text: 'Average Price' }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              enabled: true,
-              mode: 'nearest',
-            }
-          }
-        }
-      });
-      // Costruisce la legenda HTML
-      legendContainer.innerHTML = '';
-      datasets.forEach((ds, idx) => {
-        const li = document.createElement('li');
-        const box = document.createElement('div');
-        box.className = 'legend-box';
-        box.style.backgroundColor = ds.borderColor;
-        const span = document.createElement('span');
-        span.className = 'label-text';
-        span.textContent = ds.label;
-        li.appendChild(box);
-        li.appendChild(span);
-        li.addEventListener('mouseenter', () => {
-          currentChart.setDatasetVisibility(idx, true);
-          currentChart.data.datasets.forEach((d, i) => {
-            if (i !== idx) currentChart.setDatasetVisibility(i, false);
-          });
-          currentChart.update();
-        });
-        li.addEventListener('mouseleave', () => {
-          currentChart.data.datasets.forEach((d, i) => {
-            currentChart.setDatasetVisibility(i, true);
-          });
-          currentChart.update();
-        });
-        li.addEventListener('click', () => {
-          if (level === 'state') {
-            renderDistricts(product, ds.label);
-          } else if (level === 'district') {
-            renderMarkets(product, ds.label);
-          }
-        });
-        legendContainer.appendChild(li);
-      });
-    }
-
-    function updateStats(datasets, level) {
-      if (!datasets.length) {
-        statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-        return;
-      }
-      let globalMin = Infinity, globalMax = -Infinity;
-      let minLabel = '', maxLabel = '';
-      let minDate = '', maxDate = '';
-      datasets.forEach(ds => {
-        ds.data.forEach(point => {
-          const price = point.y;
-          const date = point.x;
-          if (price < globalMin) {
-            globalMin = price;
-            minLabel = ds.label;
-            minDate = date;
-          }
-          if (price > globalMax) {
-            globalMax = price;
-            maxLabel = ds.label;
-            maxDate = date;
-          }
-        });
-      });
-      statsBox.innerHTML = `
-        <h3>Price Statistics</h3>
-        <p>Product: <span>${currentProduct}</span></p>
-        <p>Level Selected: <span>${level.charAt(0).toUpperCase() + level.slice(1)}</span></p>
-        <p>Lowest Price: <span>${minLabel}</span> on <span>${minDate}</span> (<span>${globalMin.toFixed(2)}</span>)</p>
-        <p>Highest Price: <span>${maxLabel}</span> on <span>${maxDate}</span> (<span>${globalMax.toFixed(2)}</span>)</p>
-      `;
-    }
-
-    // Eventi
-    select.addEventListener('change', function() {
-      renderChart(this.value);
+    // --- EVENTI ---
+    select.addEventListener('change', () => {
+      renderChart(select.value);
     });
-    backButton.addEventListener('click', function() {
+
+    backButton.addEventListener('click', () => {
       if (drillState.length > 0) {
-        const prev = drillState.pop();
-        prev();
+        const last = drillState.pop();
+        last();
+        if (drillState.length === 0) backButton.style.display = 'none';
       }
     });
-    resetButton.addEventListener('click', function() {
-      renderChart(currentProduct);
+
+    resetButton.addEventListener('click', () => {
+    if (currentProduct) renderChart(currentProduct); // mostra subito livello state
     });
 
-    // Avvio automatico: se product e state sono forniti, mostra direttamente i dati dello stato
-    if (selectedProduct && selectedState && rawData[selectedProduct] && rawData[selectedProduct].states[selectedState]) {
-      select.value = selectedProduct;
-      renderDistricts(selectedProduct, selectedState);
-    } else if (selectedProduct && rawData[selectedProduct]) {
-      select.value = selectedProduct;
-      renderChart(selectedProduct);
+    // --- AVVIO AUTOMATICO ---
+    // --- AVVIO AUTOMATICO ---
+if (selectedProduct && selectedState && rawData[selectedProduct]?.states[selectedState]) {
+  select.value = selectedProduct;
+  
+  // Solo un dataset per quello stato
+  currentProduct = selectedProduct;
+  currentState = selectedState;
+  currentDistrict = null;
+  drillState = [];
+
+  const datasets = [{
+    label: selectedState,
+    data: rawData[selectedProduct].states[selectedState],
+    borderWidth: 2,
+    fill: false,
+    borderColor: colorPool[selectedState] || (colorPool[selectedState] = generateColor())
+  }];
+
+  levelTitle.textContent = `State Markets of ${selectedProduct}`;
+  backButton.style.display = 'none';
+  resetButton.style.display = 'inline-block';
+  drawChart(datasets, selectedProduct, 'state');
+  updateStats(datasets, 'state');
+
+} else if (selectedProduct && rawData[selectedProduct]) {
+  select.value = selectedProduct;
+  renderChart(selectedProduct);
+}
+  </script>
+
+  <a href="/logout_admin" class="logout-btn">Logout</a>
+  <button onclick="goBackAndReload()" class="back-btn">⬅️ Back to Previous Page</button>
+  <script>
+    function goBackAndReload() {
+      const referrer = document.referrer;
+      if (referrer) window.location.href = referrer;
+      else window.history.back();
     }
   </script>
 </body>
