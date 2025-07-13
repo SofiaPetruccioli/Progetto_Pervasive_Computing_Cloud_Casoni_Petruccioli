@@ -309,35 +309,42 @@ def get_map_data():
 def graph_map():
     product = request.args.get('product')
     state = request.args.get('state')
-    docs = db.collection('commodities').stream()
+
+    # Struttura dati base per il risultato finale
     data_structure = defaultdict(lambda: {
         'states': defaultdict(lambda: defaultdict(list)),
         'districts': defaultdict(lambda: defaultdict(lambda: defaultdict(list))),
         'markets': defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     })
 
+    # Estrai e filtra i dati da Firestore
+    docs = db.collection('commodities').stream()
     for doc in docs:
         content = doc.to_dict()
         for r in content.get('readings', []):
             try:
-                if product and r['commodity_name'] != product:
+                # Filtro per prodotto e stato, se specificati
+                if product and r.get('commodity_name') != product:
                     continue
-                if state and r['state'] != state:
+                if state and r.get('state') != state:
                     continue
-                date = datetime.strptime(r['date'], "%Y-%m-%d").date().isoformat()
+
+                date = pd.to_datetime(r['date']).strftime('%Y-%m-%d')
                 commodity = r['commodity_name']
                 state_ = r['state']
                 district = r['district']
                 market = r['market']
                 modal_price = float(r['modal_price'])
 
+                # Popola le strutture dati
                 data_structure[commodity]['states'][state_][date].append(modal_price)
                 data_structure[commodity]['districts'][state_][district][date].append(modal_price)
                 data_structure[commodity]['markets'][district][market][date].append(modal_price)
 
             except Exception as e:
-                print("Error aggregation:", r.get('date'), "-", e)
+                print(f"Errore su record {r.get('date')}: {e}")
 
+    # Costruisci il dizionario finale in formato richiesto da Chart.js
     result = {}
     for commodity, levels in data_structure.items():
         result[commodity] = {
@@ -349,27 +356,31 @@ def graph_map():
 
         aggregated_days = defaultdict(list)
 
-        for state_name, dates in levels['states'].items():
+        # Livello stati
+        for state_name, date_prices in levels['states'].items():
             result[commodity]['states'][state_name] = [
-                {'x': date, 'y': mean(prices)} for date, prices in sorted(dates.items())
+                {'x': date, 'y': mean(prices)} for date, prices in sorted(date_prices.items())
             ]
-            for date, prices in dates.items():
+            for date, prices in date_prices.items():
                 aggregated_days[date].extend(prices)
 
-        for state_name, districts in levels['districts'].items():
+        # Livello distretti
+        for state_name, district_map in levels['districts'].items():
             result[commodity]['districts'][state_name] = {}
-            for district, dates in districts.items():
+            for district, date_prices in district_map.items():
                 result[commodity]['districts'][state_name][district] = [
-                    {'x': date, 'y': mean(prices)} for date, prices in sorted(dates.items())
+                    {'x': date, 'y': mean(prices)} for date, prices in sorted(date_prices.items())
                 ]
 
-        for district, markets in levels['markets'].items():
-            result[commodity]['markets'][district] = {}
-            for market, dates in markets.items():
-                result[commodity]['markets'][district][market] = [
-                    {'x': date, 'y': mean(prices)} for date, prices in sorted(dates.items())
+        # Livello mercati
+        for district_name, market_map in levels['markets'].items():
+            result[commodity]['markets'][district_name] = {}
+            for market, date_prices in market_map.items():
+                result[commodity]['markets'][district_name][market] = [
+                    {'x': date, 'y': mean(prices)} for date, prices in sorted(date_prices.items())
                 ]
 
+        # Livello aggregato
         result[commodity]['aggregated'] = [
             {'x': date, 'y': mean(prices)} for date, prices in sorted(aggregated_days.items())
         ]
