@@ -48,17 +48,7 @@
 
 <a href="/logout_admin" class="logout-btn">Logout</a>
 
-<button onclick="goBackAndReload()" class="back-btn">⬅️ Back to Previous Page</button>
+<a href="/dashboard" class="back-btn">⬅️ Back to Previous Page</a>
 
-<script>
-  function goBackAndReload() {
-    const referrer = document.referrer;
-    if (referrer) {
-      window.location.href = referrer;  // forza caricamento pagina precedente (con refresh)
-    } else {
-      window.history.back(); // fallback
-    }
-  }
-</script>
 </body>
 </html>
