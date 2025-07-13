@@ -13,7 +13,7 @@
     <div id="info">Click on legend labels to drill down.</div>
     <div>
       <div class="select-group">
-        <label for="productSelect">Select a product:</label>
+        <label for="productSelect">Selected product:</label>
         <select id="productSelect">
           <option value="" disabled selected>— Choose Product —</option>
         </select>
@@ -187,7 +187,7 @@
       resetButton.style.display = 'inline-block';
       legendContainer.innerHTML = '';
       statsBox.innerHTML = '<h3>Statistics</h3><p>No data</p>';
-      levelTitle.textContent = `State Markets of ${product}`;
+      levelTitle.textContent = `Selected State Market of ${product}`;
 
       const datasets = Object.entries(rawData[product].states).map(([state, values]) => ({
         label: state,
@@ -279,7 +279,7 @@ if (selectedProduct && selectedState && rawData[selectedProduct]?.states[selecte
     borderColor: colorPool[selectedState] || (colorPool[selectedState] = generateColor())
   }];
 
-  levelTitle.textContent = `State Markets of ${selectedProduct}`;
+  levelTitle.textContent = `Selected State Market of ${selectedProduct}`;
   backButton.style.display = 'none';
   resetButton.style.display = 'inline-block';
   drawChart(datasets, selectedProduct, 'state');
