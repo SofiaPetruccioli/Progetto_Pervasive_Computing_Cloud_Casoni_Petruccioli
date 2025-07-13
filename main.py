@@ -483,6 +483,7 @@ from flask import Flask, jsonify
 from flask import jsonify
 
 @app.route('/aggiorna_modelli')
+@login_required
 def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models', min_points=35):
     os.makedirs(model_dir, exist_ok=True)
 
@@ -532,11 +533,11 @@ def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models'
                 blob_name = f"models/prophet_{commodity.replace(' ', '_')}.joblib"
                 upload_to_gcs(bucket_name, blob_name, tmp.name)
 
-        return jsonify({"status": "success", "message": "Modelli aggiornati con successo!"})
+        return jsonify({"status": "success", "message": "Models updated successfully!"})
 
     except Exception as e:
-        print("Errore durante l'aggiornamento dei modelli:", str(e))
-        return jsonify({"status": "error", "message": f"Errore durante l'aggiornamento: {str(e)}"}), 500
+        print("Error updating models:", str(e))
+        return jsonify({"status": "error", "message": f"Error updating models: {str(e)}"}), 500
      
 
 
