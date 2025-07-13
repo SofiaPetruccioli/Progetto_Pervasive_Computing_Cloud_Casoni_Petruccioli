@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Arbitrage Opportunities</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <h1>Arbitrage Opportunities</h1>
+
+    <div id="top-bar">
+        <div class="left-side">
+            <a href="/arbitrage_chart?product={{ selected_product }}">
+                <button id="view-chart-btn" class="nav-button">
+                    📈 View Profit Chart
+                </button>
+            </a>
+        </div>
+        <div class="right-side">
+            <label for="product-select-simple">Select Product:</label><br>
+            <select id="product-select-simple">
+                {% for p in products %}
+                    <option value="{{ p }}" {% if p == selected_product %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if opportunities %}
+    <table id="arbitrageTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Product</th>
+                <th>Buy Market</th>
+                <th>Buy Price</th>
+                <th>Sell Market</th>
+                <th>Sell Price</th>
+                <th>Profit</th>
+                <th>Profit %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for opp in opportunities %}
+            <tr>
+                <td>{{ opp.date }}</td>
+                <td>{{ opp.commodity_name }}</td>
+                <td>{{ opp.market_buy }}</td>
+                <td>{{ opp.price_buy }}</td>
+                <td>{{ opp.market_sell }}</td>
+                <td>{{ opp.price_sell }}</td>
+                <td>{{ opp.profit }}</td>
+                <td>{{ opp.profit_percent }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p style="text-align: center;">No opportunities found for selected product.</p>
+    {% endif %}
+
+    <script>
+        // Dropdown change navigation
+        document.getElementById('product-select-simple').addEventListener('change', function () {
+            const selectedProduct = this.value;
+            if (selectedProduct) {
+                window.location.href = '/arbitrage_simple?product=' + encodeURIComponent(selectedProduct);
+            }
+        });
+
+        // Initialize DataTable without search
+        $(document).ready(function () {
+            $('#arbitrageTable').DataTable({
+                pageLength: 75,
+                order: [[0, 'asc']],
+                searching: false,
+                lengthChange: false,
+            });
+        });
+    </script>
+</body>
+</html>

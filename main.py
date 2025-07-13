@@ -552,92 +552,166 @@ def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models'
      
 
 
+from flask import render_template, request
+from flask_login import login_required
+import pandas as pd
 
-def train_arbitrage_model():
-    selected_products = ["Wheat", "Rice", "Carrots"]
+@app.route('/arbitrage_simple')
+@login_required
+def arbitrage_page():
     records = []
+
+    # Recupera i dati dal database Firestore
     docs = db.collection('commodities').stream()
     for doc in docs:
         content = doc.to_dict()
         for r in content.get('readings', []):
             try:
-                if r['commodity_name'] not in selected_products:
-                    continue
+                # Forza la data a stringa leggibile
+                date_str = str(r['date']) if not isinstance(r['date'], str) else r['date']
                 records.append({
-                    'date': r['date'],
+                    'date': date_str,
                     'commodity_name': r['commodity_name'],
-                    'state': r['state'],
-                    'district': r['district'],
                     'market': r['market'],
-                    'min_price': float(r['min_price']),
-                    'max_price': float(r['max_price']),
                     'modal_price': float(r['modal_price'])
                 })
             except Exception:
-                continue
-    df = pd.DataFrame(records)
-    print(f"Total records: {len(df)}")
-    pairs = []
-    for (product, date), group in df.groupby(['commodity_name', 'date']):
-        markets = group['market'].tolist()
-        prices = group['modal_price'].tolist()
-        min_prices = group['min_price'].tolist()
-        max_prices = group['max_price'].tolist()
-        for i, j in combinations(range(len(markets)), 2):
-            price1, price2 = prices[i], prices[j]
-            min1, max1 = min_prices[i], max_prices[i]
-            min2, max2 = min_prices[j], max_prices[j]
-            diff = price2 - price1
-            ratio = price2 / price1 if price1 != 0 else 0
-            arbitrage = 1 if abs(diff) / min(price1, price2) > 0.1 else 0
-            profit = abs(diff)
-            profit_percent = profit / min(price1, price2) * 100 if min(price1, price2) != 0 else 0
-            pairs.append({
-                'commodity_name': product,
-                'date': date,
-                'market1': markets[i],
-                'market2': markets[j],
-                'modal_price1': price1,
-                'modal_price2': price2,
-                'min_price1': min1,
-                'max_price1': max1,
-                'min_price2': min2,
-                'max_price2': max2,
-                'diff': diff,
-                'ratio': ratio,
-                'arbitrage': arbitrage,
-                'profit': profit,
-                'profit_percent': profit_percent
-            })
-    df_pairs = pd.DataFrame(pairs)
-    print(f"Total pairs: {len(df_pairs)}")
-    #debug
-    print("Sample of arbitrage dataset (first 20 rows):")
-    print(df_pairs[['commodity_name','date','market1','modal_price1','market2','modal_price2','diff','arbitrage','profit','profit_percent']].head(20))
-    #end debug
-    feature_cols = ['diff', 'ratio', 'modal_price1', 'modal_price2', 'min_price1', 'max_price1', 'min_price2', 'max_price2']
-    X = df_pairs[feature_cols]
-    y = df_pairs['arbitrage']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    clf = RandomForestClassifier(n_estimators=100, random_state=42)
-    clf.fit(X_train, y_train)
-    print("Accuracy su test set:", clf.score(X_test, y_test))
-    dump(clf, 'models/arbitrage_rf.joblib')
-    opps = df_pairs[(df_pairs['arbitrage'] == 1) & (df_pairs['profit'] > 0)]
-    print(opps[['commodity_name', 'date', 'market1', 'modal_price1', 'market2', 'modal_price2', 'profit', 'profit_percent']].sort_values('profit_percent', ascending=False).head(10))
-    return clf, df_pairs
+                continue  # ignora record malformati
 
-@app.route('/arbitrage')
+    df = pd.DataFrame(records)
+
+    if df.empty:
+        return render_template(
+            'arbitrage_simple.html',
+            opportunities=[],
+            products=[],
+            selected_product=None
+        )
+
+    # Lista dei prodotti unici per il menu a tendina
+    products = sorted(df['commodity_name'].dropna().unique().tolist())
+
+    # Prodotto selezionato via GET, fallback sul primo disponibile
+    selected_product = request.args.get('product')
+    if selected_product not in products:
+        selected_product = products[0] if products else None
+
+    # Filtra i dati per il prodotto selezionato
+    df = df[df['commodity_name'] == selected_product]
+
+    # Calcola le migliori opportunità giornaliere
+    opps = []
+    for date, group in df.groupby('date'):
+        if len(group) < 2:
+            continue
+        max_row = group.loc[group['modal_price'].idxmax()]
+        min_row = group.loc[group['modal_price'].idxmin()]
+        profit = max_row['modal_price'] - min_row['modal_price']
+        profit_percent = (profit / min_row['modal_price']) * 100 if min_row['modal_price'] != 0 else 0
+
+        opps.append({
+            'date': date,
+            'commodity_name': selected_product,
+            'market_buy': min_row['market'],
+            'price_buy': round(min_row['modal_price'], 2),
+            'market_sell': max_row['market'],
+            'price_sell': round(max_row['modal_price'], 2),
+            'profit': round(profit, 2),
+            'profit_percent': round(profit_percent, 2)
+        })
+
+    df_opps = pd.DataFrame(opps)
+
+    # Ordina per data solo se ci sono dati
+    if not df_opps.empty and 'date' in df_opps.columns:
+        try:
+            df_opps['date_obj'] = pd.to_datetime(df_opps['date'], errors='coerce', format='%Y-%m-%d')
+            df_opps = df_opps.sort_values(by='date_obj').drop(columns=['date_obj'])
+        except Exception:
+            df_opps = df_opps.sort_values(by='date', errors='ignore')
+    else:
+        # assicura struttura per template
+        df_opps = pd.DataFrame(columns=[
+            'date', 'commodity_name', 'market_buy', 'price_buy',
+            'market_sell', 'price_sell', 'profit', 'profit_percent'
+        ])
+
+    return render_template(
+        'arbitrage_simple.html',
+        opportunities=df_opps.to_dict(orient='records'),
+        products=products,
+        selected_product=selected_product
+    )
+
+@app.route('/arbitrage_chart')
 @login_required
-def arbitrage_page():
-    _, df_pairs = train_arbitrage_model()
-    opps = df_pairs[(df_pairs['arbitrage'] == 1) & (df_pairs['profit'] > 0)]
-    top_opps = opps.sort_values('profit_percent', ascending=False).head(50)
-    opportunities = top_opps.to_dict(orient='records')
-    return render_template('arbitrage.html', opportunities=opportunities)
+def arbitrage_chart():
+    records = []
+
+    # Estrai dati da Firestore
+    docs = db.collection('commodities').stream()
+    for doc in docs:
+        content = doc.to_dict()
+        for r in content.get('readings', []):
+            try:
+                records.append({
+                    'date': str(r['date']),
+                    'commodity_name': r['commodity_name'],
+                    'market': r['market'],
+                    'modal_price': float(r['modal_price'])
+                })
+            except:
+                continue
+
+    df = pd.DataFrame(records)
+    if df.empty:
+        return render_template('arbitrage_chart.html', products=[], selected_product=None, dates=[], profits=[])
+
+    # Lista prodotti unici
+    products = sorted(df['commodity_name'].dropna().unique().tolist())
+
+    # Prodotto selezionato dalla query string
+    selected_product = request.args.get('product') or products[0]
+
+    if selected_product not in products:
+        selected_product = products[0]
+
+    # Filtro per prodotto
+    df = df[df['commodity_name'] == selected_product]
+
+    opps = []
+    for date, group in df.groupby('date'):
+        if len(group) < 2:
+            continue
+        try:
+            max_price = group['modal_price'].max()
+            min_price = group['modal_price'].min()
+            profit = max_price - min_price
+            opps.append({'date': date, 'profit': profit})
+        except:
+            continue
+
+    df_opps = pd.DataFrame(opps)
+    if df_opps.empty:
+        return render_template('arbitrage_chart.html', products=products, selected_product=selected_product, dates=[], profits=[])
+
+    df_opps['date'] = pd.to_datetime(df_opps['date'], errors='coerce')
+    df_opps = df_opps.dropna().sort_values('date')
+    df_opps['cum_profit'] = df_opps['profit'].cumsum()
+
+    dates = df_opps['date'].dt.strftime('%Y-%m-%d').tolist()
+    profits = df_opps['cum_profit'].round(2).tolist()
+
+    return render_template(
+        'arbitrage_chart.html',
+        products=products,
+        selected_product=selected_product,
+        dates=dates,
+        profits=profits
+    )
+
+
 
 if __name__ == '__main__':
-    
-
     app.run(host="0.0.0.0", port=8080, debug=True)
 

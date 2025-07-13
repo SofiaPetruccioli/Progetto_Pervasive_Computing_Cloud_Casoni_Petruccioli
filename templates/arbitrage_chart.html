@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cumulative Profit Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_graph.css') }}">
+</head>
+<body>
+    <h1 style="text-align: center;">Cumulative Arbitrage Profit</h1>
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <label for="product">Select Product:</label>
+        <select id="product">
+            {% for p in products %}
+                <option value="{{ p }}" {% if p == selected_product %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="max-width: 900px; margin: auto;">
+        <canvas id="profitChart"></canvas>
+    </div>
+
+    <script>
+        // Redirect when product is changed
+        document.getElementById('product').addEventListener('change', function () {
+            const selected = this.value;
+            window.location.href = '/arbitrage_chart?product=' + encodeURIComponent(selected);
+        });
+
+        const labels = JSON.parse('{{ dates | tojson | safe }}');
+        const profits = JSON.parse('{{ profits | tojson | safe }}');
+
+        const ctx = document.getElementById('profitChart').getContext('2d');
+        const profitChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cumulative Profit',
+                    data: profits,
+                    borderColor: 'green',
+                    backgroundColor: 'rgba(0, 128, 0, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'  // ⬅️ Legend below chart
+                    },
+                    title: {
+                        display: true,
+                        text: 'Cumulative Profit Over Time'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Date' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Cumulative Profit' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
