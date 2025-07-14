@@ -5,7 +5,7 @@ import time
 
 SERVER_URL = "http://localhost:8080/sensors"
 CSV_PATH = "data/agridata_clean.csv"
-DELAY_SECONDS = 2  # intervallo tra le richieste
+DELAY_SECONDS = 2  # interval between requests
 
 def main():
     with open(CSV_PATH, 'rb') as f:
@@ -35,7 +35,7 @@ def main():
         except Exception as e:
             print(f"Error sending data: {e}")
 
-        time.sleep(DELAY_SECONDS)  # ⏱ Attendi intervallo
+        time.sleep(DELAY_SECONDS)  # wait for interval
 
 if __name__ == "__main__":
     main()
