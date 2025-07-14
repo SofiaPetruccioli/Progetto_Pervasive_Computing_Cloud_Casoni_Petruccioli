@@ -32,6 +32,35 @@ login.login_view = '/homepage'
 
 db = firestore.Client.from_service_account_json('credentials.json')
 
+
+@app.route('/sensors/<sensor>', methods=['POST'])
+def new_data(sensor):
+    data = request.values
+    new_entry = {
+        'date': data['date'],
+        'commodity_name': data['commodity_name'],
+        'state': data['state'],
+        'district': data['district'],
+        'market': data['market'],
+        'min_price': float(data['min_price']),
+        'max_price': float(data['max_price']),
+        'modal_price': float(data['modal_price']),
+    }
+
+    doc_ref = db.collection('comm').document(sensor)
+    entity = doc_ref.get()
+    if entity.exists:
+        d = entity.to_dict()
+        d.setdefault('readings', []).append(new_entry)
+        doc_ref.set(d)
+    else:
+        doc_ref.set({
+            'state': new_entry['state'],
+            'readings': [new_entry]
+        })
+
+    return 'ok', 200
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -216,33 +245,6 @@ def read(sensor):
     else:
         return 'not found', 404
 
-@app.route('/sensors/<sensor>', methods=['POST'])
-def new_data(sensor):
-    data = request.values
-    new_entry = {
-        'date': data['date'],
-        'commodity_name': data['commodity_name'],
-        'state': data['state'],
-        'district': data['district'],
-        'market': data['market'],
-        'min_price': float(data['min_price']),
-        'max_price': float(data['max_price']),
-        'modal_price': float(data['modal_price']),
-    }
-
-    doc_ref = db.collection('commodities').document(sensor)
-    entity = doc_ref.get()
-    if entity.exists:
-        d = entity.to_dict()
-        d.setdefault('readings', []).append(new_entry)
-        doc_ref.set(d)
-    else:
-        doc_ref.set({
-            'state': new_entry['state'],
-            'readings': [new_entry]
-        })
-
-    return 'ok', 200
 
 #get map data
 @app.route('/getmapdata')

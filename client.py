@@ -1,19 +1,21 @@
 import csv
 import requests
 import io
+import time
 
 SERVER_URL = "http://localhost:8080/sensors"
 CSV_PATH = "data/agridata_clean.csv"
+DELAY_SECONDS = 2  # intervallo tra le richieste
 
 def main():
     with open(CSV_PATH, 'rb') as f:
-        content = f.read().replace(b'\x00', b'')  # Rimuove i null byte
-    text = content.decode('utf-8', errors='ignore')  # Decodifica ignorando eventuali errori
+        content = f.read().replace(b'\x00', b'')
+    text = content.decode('utf-8', errors='ignore')
     reader = csv.DictReader(io.StringIO(text))
 
     for row in reader:
         if any(value == '' or value is None for value in row.values()):
-            continue  # Salta righe con campi vuoti
+            continue
 
         sensor_id = f"{row['state'].replace(' ', '_')}_{row['commodity_name'].replace(' ', '_')}"
         data = {
@@ -26,9 +28,15 @@ def main():
             'max_price': row['max_price'],
             'modal_price': row['modal_price']
         }
-        response = requests.post(f"{SERVER_URL}/{sensor_id}", data=data)
-        print(f"Inviato: {row['commodity_name']} - Stato: {row['state']} - Risposta: {response.status_code}")
+
+        try:
+            response = requests.post(f"{SERVER_URL}/{sensor_id}", data=data)
+            print(f"Sent: {row['commodity_name']} - {row['state']} | Status: {response.status_code}")
+        except Exception as e:
+            print(f"Error sending data: {e}")
+
+        time.sleep(DELAY_SECONDS)  # ⏱ Attendi intervallo
 
 if __name__ == "__main__":
     main()
-    print(">>> CLIENT COMPLETATO <<<")
+    print(">>> CLIENT COMPLETED <<<")
