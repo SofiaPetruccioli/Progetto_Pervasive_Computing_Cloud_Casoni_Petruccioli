@@ -8,7 +8,6 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <style>
-        
         h1 {
             text-align: center;
             color: #0056b3;
@@ -25,8 +24,6 @@
 </head>
 <body>
     <h1 style="text-align: center; margin-bottom: 28px;">Arbitrage Opportunities</h1>
-
-    <!-- Centered select product above the buttons -->
     <div style="text-align: center; margin-bottom: 18px;">
         <label for="product-select-simple" style="display: block; margin-bottom: 6px;">Select Product:</label>
         <select id="product-select-simple" style="margin: 0 auto; display: block; min-width: 180px; max-width: 320px; padding: 7px 12px; font-size: 1.05em; border-radius: 6px; border: 1.5px solid #90caf9;">
@@ -35,26 +32,20 @@
             {% endfor %}
         </select>
     </div>
-
     <div id="top-bar" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0;">
         <div class="left-side">
-            <a href="/arbitrage_chart?product={{ selected_product }}">
+            <a href="/arbitrage_chart_user?product={{ selected_product }}">
                 <button id="view-chart-btn" class="nav-button" style="background: #fff; color: #1976D2; border: 2px solid #1976D2; border-radius: 8px; font-size: 1.02em; padding: 10px 22px; font-weight: 500; cursor: pointer; transition: background 0.2s, color 0.2s;">
                     📈 View Profit Chart
                 </button>
             </a>
         </div>
         <div class="right-side" style="display: flex; flex-direction: column; align-items: flex-end;">
-            <a id="pattern-stats-link" href="/pattern_stats?product={{ selected_product }}">
+            <a id="pattern-stats-link" href="/pattern_stats_user?product={{ selected_product }}">
                 <button id="pattern-stats-btn" class="nav-button" style="background: #fff; color: #1976D2; border: 2px solid #1976D2; border-radius: 8px; font-size: 1.02em; padding: 10px 22px; font-weight: 500; cursor: pointer; transition: background 0.2s, color 0.2s;">
                     🔍 View ML Arbitrage Patterns
                 </button>
             </a>
-            <!-- Small update button below, right-aligned -->
-            <button id="retrain-arbitrage-btn" style="background: #f5f5f5; color: #1976D2; border: 1.5px solid #90caf9; border-radius: 7px; font-size: 0.98em; padding: 7px 22px; cursor: pointer; font-weight: 500; transition: background 0.2s, color 0.2s; margin-top: 10px; align-self: flex-end; width: 100%; min-width: 180px; max-width: 220px;">
-                🔄 Update ML Models
-            </button>
-            <div id="retrain-status" style="margin-top: 7px; color: green; font-size: 0.98em; text-align: right;"></div>
         </div>
     </div>
     <style>
@@ -62,12 +53,7 @@
             background: #1976D2;
             color: #fff;
         }
-        #retrain-arbitrage-btn:hover {
-            background: #e3f2fd;
-            color: #1565C0;
-        }
     </style>
-
     {% if opportunities %}
     <table id="arbitrageTable" class="arb-table">
         <thead>
@@ -100,20 +86,18 @@
     {% else %}
         <p style="text-align: center;">No opportunities found for selected product.</p>
     {% endif %}
-
     <script>
         // Dropdown change navigation
         document.getElementById('product-select-simple').addEventListener('change', function () {
             const selectedProduct = this.value;
             if (selectedProduct) {
-                window.location.href = '/arbitrage_simple?product=' + encodeURIComponent(selectedProduct);
+                window.location.href = '/arbitrage_simple_user?product=' + encodeURIComponent(selectedProduct);
             }
             // Also update the pattern stats button link
-            document.getElementById('pattern-stats-link').href = '/pattern_stats?product=' + encodeURIComponent(selectedProduct);
+            document.getElementById('pattern-stats-link').href = '/pattern_stats_user?product=' + encodeURIComponent(selectedProduct);
         });
         // Update the pattern stats button link on page load
-        document.getElementById('pattern-stats-link').href = '/pattern_stats?product=' + encodeURIComponent(document.getElementById('product-select-simple').value);
-
+        document.getElementById('pattern-stats-link').href = '/pattern_stats_user?product=' + encodeURIComponent(document.getElementById('product-select-simple').value);
         // Initialize DataTable without search
         $(document).ready(function () {
             $('#arbitrageTable').DataTable({
@@ -123,30 +107,8 @@
                 lengthChange: false,
             });
         });
-
-        // Handle retrain ML arbitrage models button
-        document.getElementById('retrain-arbitrage-btn').onclick = function() {
-            const statusDiv = document.getElementById('retrain-status');
-            statusDiv.style.color = 'black';
-            statusDiv.innerText = 'Ricalcolo in corso...';
-            fetch('/retrain_arbitrage_models', {method: 'POST'})
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        statusDiv.style.color = 'green';
-                        statusDiv.innerText = data.message;
-                    } else {
-                        statusDiv.style.color = 'red';
-                        statusDiv.innerText = data.message || 'Errore nel ricalcolo.';
-                    }
-                })
-                .catch(err => {
-                    statusDiv.style.color = 'red';
-                    statusDiv.innerText = 'Errore di rete o server.';
-                });
-        };
     </script>
 </body>
 <a href="/logout" class="logout-btn">Logout</a>
-<a href="/dashboard" class="back-btn">⬅️ Back to Previous Page</a>
-</html>
+<a href="/dashboard_user" class="back-btn">⬅️ Back to Previous Page</a>
+</html> 

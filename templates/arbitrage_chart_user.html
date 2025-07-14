@@ -38,7 +38,6 @@
 </head>
 <body>
     <h1>Cumulative Arbitrage Profit</h1>
-
     <div class="select-container" style="text-align: center; margin-bottom: 18px;">
         <label for="product" style="display: block; margin-bottom: 6px;">Select Product:</label>
         <select id="product" style="margin: 0 auto; display: block; min-width: 180px; max-width: 320px; padding: 7px 12px; font-size: 1.05em; border-radius: 6px; border: 1.5px solid #90caf9;">
@@ -47,21 +46,17 @@
             {% endfor %}
         </select>
     </div>
-
     <div class="chart-box">
         <canvas id="profitChart"></canvas>
     </div>
-
     <script>
         // Redirect when product is changed
         document.getElementById('product').addEventListener('change', function () {
             const selected = this.value;
-            window.location.href = '/arbitrage_chart?product=' + encodeURIComponent(selected);
+            window.location.href = '/arbitrage_chart_user?product=' + encodeURIComponent(selected);
         });
-
         const labels = JSON.parse('{{ dates | tojson | safe }}');
         const profits = JSON.parse('{{ profits | tojson | safe }}');
-
         const ctx = document.getElementById('profitChart').getContext('2d');
         const profitChart = new Chart(ctx, {
             type: 'line',
@@ -103,5 +98,5 @@
     </script>
 </body>
 <a href="/logout" class="logout-btn">Logout</a>
-<a href="/arbitrage_simple" class="back-btn">⬅️ Back to Previous Page</a>
-</html>
+<a href="/arbitrage_simple_user" class="back-btn">⬅️ Back to Previous Page</a>
+</html> 

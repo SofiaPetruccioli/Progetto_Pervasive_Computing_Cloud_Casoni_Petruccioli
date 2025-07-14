@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Market Arbitrage Patterns</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+    <style>
+        body { font-size: 1.05em; }
+        table { border-collapse: collapse; width: 70%; margin: 30px auto; font-size: 0.98em; }
+        th, td { border: 1px solid #aaa; padding: 7px 10px; text-align: center; }
+        th { background: #2196F3; color: #fff; font-size: 1.05em; }
+        tr:nth-child(even) { background: #f2f2f2; }
+        h1 { text-align: center; margin-top: 30px; color: #1976D2; font-size: 1.5em; }
+    </style>
+</head>
+<body>
+    <h1>Market Arbitrage Patterns (ML)</h1>
+    <div style="text-align:center; margin-bottom: 20px;">
+        <form method="get" action="/pattern_stats_user" style="display:inline-block;">
+            <label for="product-select">Select Product:</label>
+            <select id="product-select" name="product">
+                {% for p in products %}
+                    <option value="{{ p }}" {% if p == selected_product %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <script>
+        document.getElementById('product-select').addEventListener('change', function() {
+            const selected = this.value;
+            window.location.href = '/pattern_stats_user?product=' + encodeURIComponent(selected);
+        });
+    </script>
+    <table>
+        <tr>
+            <th>Product</th>
+            <th>Market 1</th>
+            <th>Market 2</th>
+            <th>Arbitrage Frequency</th>
+            <th>Average Profit</th>
+            <th>Average Profit %</th>
+        </tr>
+        {% for row in pattern_stats %}
+        <tr>
+            <td>{{ selected_product }}</td>
+            <td>{{ row.market1 }}</td>
+            <td>{{ row.market2 }}</td>
+            <td>{{ (row.arbitrage_freq * 100) | round(1) }}%</td>
+            <td>{{ row.avg_profit | round(2) }}</td>
+            <td>{{ row.avg_profit_percent | round(2) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div style="display: flex; justify-content: center; margin-top: 40px; margin-bottom: 40px;">
+        <a href="/logout" class="logout-btn">Logout</a>
+        <a href="/arbitrage_simple_user" class="back-btn">⬅️ Back to Previous Page</a>
+    </div>
+</body>
+</html> 

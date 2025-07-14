@@ -710,7 +710,152 @@ def arbitrage_chart():
         profits=profits
     )
 
+def train_arbitrage_model(model_dir='models'):
+    # Extract all products
+    docs = db.collection('commodities').stream()
+    all_products = set()
+    records_by_product = {}
+    for doc in docs:
+        content = doc.to_dict()
+        for r in content.get('readings', []):
+            prod = r['commodity_name']
+            try:
+                rec = {
+                    'date': r['date'],
+                    'commodity_name': prod,
+                    'state': r['state'],
+                    'district': r['district'],
+                    'market': r['market'],
+                    'min_price': float(r['min_price']),
+                    'max_price': float(r['max_price']),
+                    'modal_price': float(r['modal_price'])
+                }
+                records_by_product.setdefault(prod, []).append(rec)
+            except Exception:
+                continue
+    os.makedirs(model_dir, exist_ok=True)
+    pattern_stats_dict = {}
+    for product, records in records_by_product.items():
+        print(f"Product: {product}, total records: {len(records)}")
+        df = pd.DataFrame(records)
+        pairs = []
+        for (product, date), group in df.groupby(['commodity_name', 'date']):
+            markets = group['market'].tolist()
+            prices = group['modal_price'].tolist()
+            min_prices = group['min_price'].tolist()
+            max_prices = group['max_price'].tolist()
+            for i, j in combinations(range(len(markets)), 2):
+                price1, price2 = prices[i], prices[j]
+                min1, max1 = min_prices[i], max_prices[i]
+                min2, max2 = min_prices[j], max_prices[j]
+                diff = price2 - price1
+                ratio = price2 / price1 if price1 != 0 else 0
+                arbitrage = 1 if abs(diff) / min(price1, price2) > 0.1 else 0
+                profit = abs(diff)
+                profit_percent = profit / min(price1, price2) * 100 if min(price1, price2) != 0 else 0
+                pairs.append({
+                    'commodity_name': product,
+                    'date': date,
+                    'market1': markets[i],
+                    'market2': markets[j],
+                    'modal_price1': price1,
+                    'modal_price2': price2,
+                    'min_price1': min1,
+                    'max_price1': max1,
+                    'min_price2': min2,
+                    'max_price2': max2,
+                    'diff': diff,
+                    'ratio': ratio,
+                    'arbitrage': arbitrage,
+                    'profit': profit,
+                    'profit_percent': profit_percent
+                })
+        print(f"  Market pairs generated: {len(pairs)}")
+        df_pairs = pd.DataFrame(pairs)
+        if df_pairs.empty:
+            print(f"  No valid market pairs for {product}, model NOT created.")
+            continue
+        if len(df_pairs) < 2:
+            print(f"  Not enough data for {product} (only {len(df_pairs)} pairs), model NOT created.")
+            continue
+        feature_cols = ['diff', 'ratio', 'modal_price1', 'modal_price2', 'min_price1', 'max_price1', 'min_price2', 'max_price2']
+        X = df_pairs[feature_cols]
+        y = df_pairs['arbitrage']
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+        clf.fit(X_train, y_train)
+        df_pairs['arbitrage_pred'] = clf.predict(X)
+        pattern_stats = (
+            df_pairs
+            .groupby(['market1', 'market2'])
+            .agg(
+                arbitrage_count=('arbitrage_pred', 'sum'),
+                avg_profit=('profit', 'mean'),
+                avg_profit_percent=('profit_percent', 'mean'),
+                total_obs=('arbitrage_pred', 'count')
+            )
+            .reset_index()
+        )
+        pattern_stats['arbitrage_freq'] = pattern_stats['arbitrage_count'] / pattern_stats['total_obs']
+        # Save the model locally
+        model_path = os.path.join(model_dir, f"arbitrage_rf_{product.replace(' ', '_')}.joblib")
+        joblib.dump(clf, model_path)
+        # Save stats in CSV
+        stats_path = os.path.join(model_dir, f"pattern_stats_{product.replace(' ', '_')}.csv")
+        pattern_stats.to_csv(stats_path, index=False)
+        pattern_stats_dict[product] = pattern_stats
+        print(f"  ML model and stats saved for {product}")
+    return pattern_stats_dict
 
+@app.route('/pattern_stats')
+@login_required
+def pattern_stats_page():
+    product = request.args.get('product')
+    # Get all products like in arbitrage_simple
+    records = []
+    docs = db.collection('commodities').stream()
+    for doc in docs:
+        content = doc.to_dict()
+        for r in content.get('readings', []):
+            try:
+                records.append({
+                    'commodity_name': r['commodity_name']
+                })
+            except Exception:
+                continue
+    df = pd.DataFrame(records)
+    products = sorted(df['commodity_name'].dropna().unique().tolist())
+    if not product or product not in products:
+        product = products[0] if products else None
+    # Load the model and pattern_stats for the selected product
+    model_path = os.path.join('models', f"arbitrage_rf_{product.replace(' ', '_')}.joblib")
+    stats_path = os.path.join('models', f"pattern_stats_{product.replace(' ', '_')}.csv")
+    if not os.path.exists(model_path):
+        return f"No arbitrage model found for product {product}", 404
+    if not os.path.exists(stats_path):
+        return f"No pattern stats found for product {product}. Please update the models.", 404
+    df_stats = pd.read_csv(stats_path)
+    # Filter: only patterns with frequency >= 0.8
+    df_stats = df_stats[df_stats['arbitrage_freq'] >= 0.8]
+    pattern_stats_table = df_stats.sort_values('arbitrage_freq', ascending=False).to_dict(orient='records')
+    pattern_stats_table = pattern_stats_table[:50]  # Mostra solo le prime 50
+    return render_template('pattern_stats.html', pattern_stats=pattern_stats_table, selected_product=product, products=products)
+
+@app.route('/retrain_arbitrage_models', methods=['POST'])
+@login_required
+def retrain_arbitrage_models():
+    import glob, os
+    model_dir = 'models'
+    # Delete all old models and pattern_stats ONLY when retraining
+    for f in glob.glob(os.path.join(model_dir, 'arbitrage_rf_*.joblib')):
+        os.remove(f)
+    for f in glob.glob(os.path.join(model_dir, 'pattern_stats_*.csv')):
+        os.remove(f)
+    try:
+        train_arbitrage_model(model_dir=model_dir)
+        return jsonify({'status': 'success', 'message': 'Arbitrage models retrained and saved locally.'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Error during retraining: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8080, debug=True)
