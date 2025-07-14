@@ -128,7 +128,7 @@
         document.getElementById('retrain-arbitrage-btn').onclick = function() {
             const statusDiv = document.getElementById('retrain-status');
             statusDiv.style.color = 'black';
-            statusDiv.innerText = 'Ricalcolo in corso...';
+            statusDiv.innerText = 'Updating ML models...';
             fetch('/retrain_arbitrage_models', {method: 'POST'})
                 .then(response => response.json())
                 .then(data => {

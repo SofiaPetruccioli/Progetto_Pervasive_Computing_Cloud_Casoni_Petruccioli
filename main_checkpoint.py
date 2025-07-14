@@ -1,4 +1,3 @@
-#librerie
 from flask import Flask, render_template, request, redirect, jsonify
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required, UserMixin
 from secret import secret_key
@@ -19,14 +18,13 @@ from google.cloud import storage
 import tempfile
 from google.oauth2 import service_account
 
-# Path to the credentials file
+# Percorso al file di credenziali
 CREDENTIALS_PATH = "credentials.json"
 credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_PATH)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
 
-#login manager
 login = LoginManager(app)
 login.login_view = '/homepage'
 
@@ -45,7 +43,7 @@ def register():
 
         user_ref.set({
             "username": username,
-            "password": password,  
+            "password": password,  # in chiaro come richiesto
             "role": role
         })
 
@@ -60,6 +58,7 @@ class User(UserMixin):
         self.role = role
 
 
+
 @login.user_loader
 def load_user(username):
     doc = db.collection('users').document(username).get()
@@ -69,12 +68,13 @@ def load_user(username):
     return None
 
 
+
+
 @app.route('/')
 @app.route('/homepage')
 def home():
     return render_template('homepage.html')
 
-#login and logout
 @app.route('/login_admin', methods=['GET', 'POST'])
 def login_admin():
     if request.method == 'POST':
@@ -92,12 +92,12 @@ def login_admin():
     
     return render_template('login_admin.html')
 
+
 @app.route('/logout_admin')
 @login_required
 def logout_admin():
     logout_user()
     return render_template('homepage.html')
-
 
 @app.route('/login_user', methods=['GET', 'POST'])
 def user_login():
@@ -116,29 +116,29 @@ def user_login():
 
     return render_template('login_user.html')
 
+
 @app.route('/logout_user')
 @login_required
 def user_logout():
     logout_user()
     return render_template('homepage.html')
 
-#dashboard user
 @app.route('/dashboard_user')
 @login_required
 def dashboard_user():
     return render_template('dashboard_user.html')
-#dashboard admin
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
     return render_template('dashboard.html')
-#map
+
 @app.route('/map')
 @login_required
 def map_page():
     return render_template('map.html')
 
-#graph
+
 @app.route('/graph3')
 @login_required
 def graph():
@@ -205,7 +205,28 @@ def graph():
 
     return render_template('graph3.html', data=json.dumps(result))
 
-#client side
+@app.route('/database')
+@login_required
+def database():
+    db = firestore.Client.from_service_account_json('credentials.json')
+    docs = db.collection('commodities').stream()
+    
+    dati = []
+    max_rows = 500
+
+    for doc in docs:
+        contenuto = doc.to_dict()
+        readings = contenuto.get('readings', [])
+        for r in readings:
+            if len(dati) >= max_rows:
+                break  # Ferma se abbiamo raggiunto 500 righe
+            r['sensor'] = doc.id
+            dati.append(r)
+        if len(dati) >= max_rows:
+            break  # Ferma anche l'iterazione sui documenti
+
+    return render_template('database.html', dati=dati)
+
 @app.route('/sensors/<sensor>', methods=['GET'])
 @login_required
 def read(sensor):
@@ -244,7 +265,7 @@ def new_data(sensor):
 
     return 'ok', 200
 
-#get map data
+
 @app.route('/getmapdata')
 @login_required
 def get_map_data():
@@ -283,27 +304,26 @@ def get_map_data():
         mimetype='application/json'
     )
 
-#graph of the map
 @app.route('/graph_map')
 @login_required
 def graph_map():
     product = request.args.get('product')
     state = request.args.get('state')
 
-    # base data structure for the final result
+    # Struttura dati base per il risultato finale
     data_structure = defaultdict(lambda: {
         'states': defaultdict(lambda: defaultdict(list)),
         'districts': defaultdict(lambda: defaultdict(lambda: defaultdict(list))),
         'markets': defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     })
 
-    # Extract and filter data from Firestore
+    # Estrai e filtra i dati da Firestore
     docs = db.collection('commodities').stream()
     for doc in docs:
         content = doc.to_dict()
         for r in content.get('readings', []):
             try:
-                # Filter for product and state, if specified
+                # Filtro per prodotto e stato, se specificati
                 if product and r.get('commodity_name') != product:
                     continue
                 if state and r.get('state') != state:
@@ -316,7 +336,7 @@ def graph_map():
                 market = r['market']
                 modal_price = float(r['modal_price'])
 
-                # Populate the data structures
+                # Popola le strutture dati
                 data_structure[commodity]['states'][state_][date].append(modal_price)
                 data_structure[commodity]['districts'][state_][district][date].append(modal_price)
                 data_structure[commodity]['markets'][district][market][date].append(modal_price)
@@ -324,7 +344,7 @@ def graph_map():
             except Exception as e:
                 print(f"Errore su record {r.get('date')}: {e}")
 
-    # Build the final dictionary in the format required by Chart.js
+    # Costruisci il dizionario finale in formato richiesto da Chart.js
     result = {}
     for commodity, levels in data_structure.items():
         result[commodity] = {
@@ -336,7 +356,7 @@ def graph_map():
 
         aggregated_days = defaultdict(list)
 
-        # level states
+        # Livello stati
         for state_name, date_prices in levels['states'].items():
             result[commodity]['states'][state_name] = [
                 {'x': date, 'y': mean(prices)} for date, prices in sorted(date_prices.items())
@@ -344,7 +364,7 @@ def graph_map():
             for date, prices in date_prices.items():
                 aggregated_days[date].extend(prices)
 
-        # level districts
+        # Livello distretti
         for state_name, district_map in levels['districts'].items():
             result[commodity]['districts'][state_name] = {}
             for district, date_prices in district_map.items():
@@ -352,7 +372,7 @@ def graph_map():
                     {'x': date, 'y': mean(prices)} for date, prices in sorted(date_prices.items())
                 ]
 
-        # level markets
+        # Livello mercati
         for district_name, market_map in levels['markets'].items():
             result[commodity]['markets'][district_name] = {}
             for market, date_prices in market_map.items():
@@ -360,7 +380,7 @@ def graph_map():
                     {'x': date, 'y': mean(prices)} for date, prices in sorted(date_prices.items())
                 ]
 
-        # aggregated level
+        # Livello aggregato
         result[commodity]['aggregated'] = [
             {'x': date, 'y': mean(prices)} for date, prices in sorted(aggregated_days.items())
         ]
@@ -373,7 +393,7 @@ def graph_map():
     )
 
 
-# upload and download from gcs
+
 
 def upload_to_gcs(bucket_name, blob_name, local_path):
     client = storage.Client(credentials=credentials)
@@ -393,7 +413,7 @@ def model_exists_gcs(bucket_name, blob_name):
     return bucket.blob(blob_name).exists(client)
 
 
-#get data for the forecast
+
 @app.route('/forecast', methods=['GET'])
 @login_required
 def forecast_page():
@@ -429,7 +449,7 @@ def forecast_page():
     blob = bucket.blob(blob_name)
 
     if not blob.exists(storage_client):
-        if len(ts) < 35:
+        if len(ts) < 20:
             return render_template('forecast.html', products=sorted(all_products), selected=product,
                                    data=None, message=f"Insufficient number of samples for '{product}'")
 
@@ -466,21 +486,26 @@ def forecast_page():
                            data=combined.to_dict(orient='records'),
                            message=None)
 
+from flask import Flask, jsonify
 
-#update forecast models
+
+
+
+from flask import jsonify
+
 @app.route('/aggiorna_modelli')
 @login_required
 def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models', min_points=35):
     os.makedirs(model_dir, exist_ok=True)
 
-    # 1. Delete all files in the models/ directory
+    # 1. Elimina tutti i file nella cartella models/
     for file in os.listdir(model_dir):
         file_path = os.path.join(model_dir, file)
         if os.path.isfile(file_path):
             os.remove(file_path)
 
     try:
-        # 2. Get data from Firestore
+        # 2. Recupera i dati da Firestore
         docs = db.collection('commodities').stream()
         data = []
         for doc in docs:
@@ -494,7 +519,7 @@ def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models'
                 except:
                     continue
 
-        # 3. Build Prophet models and save them to GCS
+        # 3. Costruisci modelli Prophet e salvali su GCS
         df = pd.DataFrame(data)
         for commodity in df['commodity_name'].unique():
             subset = df[df['commodity_name'] == commodity]
@@ -513,7 +538,7 @@ def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models'
             )
             model.fit(ts)
 
-            # save temporarily and upload to GCS
+            # salva temporaneamente e carica su GCS
             with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmp:
                 dump(model, tmp.name)
                 blob_name = f"models/prophet_{commodity.replace(' ', '_')}.joblib"
@@ -526,19 +551,23 @@ def train_all_models(bucket_name="my-forecast-models-bucket", model_dir='models'
         return jsonify({"status": "error", "message": f"Error updating models: {str(e)}"}), 500
      
 
-#Daily arbitrage opportunities
+
+from flask import render_template, request
+from flask_login import login_required
+import pandas as pd
+
 @app.route('/arbitrage_simple')
 @login_required
 def arbitrage_page():
     records = []
 
-    # Get data from Firestore
+    # Recupera i dati dal database Firestore
     docs = db.collection('commodities').stream()
     for doc in docs:
         content = doc.to_dict()
         for r in content.get('readings', []):
             try:
-                # Force the date to a readable string
+                # Forza la data a stringa leggibile
                 date_str = str(r['date']) if not isinstance(r['date'], str) else r['date']
                 records.append({
                     'date': date_str,
@@ -547,7 +576,7 @@ def arbitrage_page():
                     'modal_price': float(r['modal_price'])
                 })
             except Exception:
-                continue  # ignore malformed records
+                continue  # ignora record malformati
 
     df = pd.DataFrame(records)
 
@@ -559,18 +588,18 @@ def arbitrage_page():
             selected_product=None
         )
 
-    # unique products for the dropdown menu
+    # Lista dei prodotti unici per il menu a tendina
     products = sorted(df['commodity_name'].dropna().unique().tolist())
 
-    # selected product via GET, fallback on the first available
+    # Prodotto selezionato via GET, fallback sul primo disponibile
     selected_product = request.args.get('product')
     if selected_product not in products:
         selected_product = products[0] if products else None
 
-    # Filter data for the selected product
+    # Filtra i dati per il prodotto selezionato
     df = df[df['commodity_name'] == selected_product]
 
-    # Calculate the best daily opportunities
+    # Calcola le migliori opportunità giornaliere
     opps = []
     for date, group in df.groupby('date'):
         if len(group) < 2:
@@ -593,7 +622,7 @@ def arbitrage_page():
 
     df_opps = pd.DataFrame(opps)
 
-    # sort by date only if there are data
+    # Ordina per data solo se ci sono dati
     if not df_opps.empty and 'date' in df_opps.columns:
         try:
             df_opps['date_obj'] = pd.to_datetime(df_opps['date'], errors='coerce', format='%Y-%m-%d')
@@ -601,7 +630,7 @@ def arbitrage_page():
         except Exception:
             df_opps = df_opps.sort_values(by='date', errors='ignore')
     else:
-        # ensure structure for template
+        # assicura struttura per template
         df_opps = pd.DataFrame(columns=[
             'date', 'commodity_name', 'market_buy', 'price_buy',
             'market_sell', 'price_sell', 'profit', 'profit_percent'
@@ -614,13 +643,12 @@ def arbitrage_page():
         selected_product=selected_product
     )
 
-# Arbitrage profit chart 
 @app.route('/arbitrage_chart')
 @login_required
 def arbitrage_chart():
     records = []
 
-    # Get data from Firestore
+    # Estrai dati da Firestore
     docs = db.collection('commodities').stream()
     for doc in docs:
         content = doc.to_dict()
@@ -639,16 +667,16 @@ def arbitrage_chart():
     if df.empty:
         return render_template('arbitrage_chart.html', products=[], selected_product=None, dates=[], profits=[])
 
-    # unique products for the dropdown menu
+    # Lista prodotti unici
     products = sorted(df['commodity_name'].dropna().unique().tolist())
 
-    # selected product via GET, fallback on the first available
+    # Prodotto selezionato dalla query string
     selected_product = request.args.get('product') or products[0]
 
     if selected_product not in products:
         selected_product = products[0]
 
-    # Filter for product
+    # Filtro per prodotto
     df = df[df['commodity_name'] == selected_product]
 
     opps = []
@@ -682,7 +710,6 @@ def arbitrage_chart():
         profits=profits
     )
 
-#Arbitrage opportunities ML model: Random Forest
 def train_arbitrage_model(model_dir='models'):
     # Extract all products
     docs = db.collection('commodities').stream()
@@ -790,7 +817,6 @@ def train_arbitrage_model(model_dir='models'):
         print(f"  ML model and stats saved to GCS for {product}")
     return pattern_stats_dict
 
-#view pattern stats with ML model
 @app.route('/pattern_stats')
 @login_required
 def pattern_stats_page():
@@ -811,35 +837,33 @@ def pattern_stats_page():
     products = sorted(df['commodity_name'].dropna().unique().tolist())
     if not product or product not in products:
         product = products[0] if products else None
-    # Download the model and pattern_stats for the selected product from GCS
-    import tempfile
-    bucket_name = "my-forecast-models-bucket"
-    model_blob = f"arbitrage/arbitrage_rf_{product.replace(' ', '_')}.joblib"
-    stats_blob = f"arbitrage/pattern_stats_{product.replace(' ', '_')}.csv"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmp_model:
-        try:
-            download_from_gcs(bucket_name, model_blob, tmp_model.name)
-        except Exception:
-            return f"No arbitrage model found for product {product}", 404
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_stats:
-        try:
-            download_from_gcs(bucket_name, stats_blob, tmp_stats.name)
-        except Exception:
-            return f"No pattern stats found for product {product}. Please update the models.", 404
-        df_stats = pd.read_csv(tmp_stats.name)
-    # Filter: only patterns with frequency >= 0.8 and show only the first 5
+    # Load the model and pattern_stats for the selected product
+    model_path = os.path.join('models', f"arbitrage_rf_{product.replace(' ', '_')}.joblib")
+    stats_path = os.path.join('models', f"pattern_stats_{product.replace(' ', '_')}.csv")
+    if not os.path.exists(model_path):
+        return f"No arbitrage model found for product {product}", 404
+    if not os.path.exists(stats_path):
+        return f"No pattern stats found for product {product}. Please update the models.", 404
+    df_stats = pd.read_csv(stats_path)
+    # Filter: only patterns with frequency >= 0.8
     df_stats = df_stats[df_stats['arbitrage_freq'] >= 0.8]
     pattern_stats_table = df_stats.sort_values('total_obs', ascending=False).to_dict(orient='records')
     pattern_stats_table = pattern_stats_table[:5] 
     return render_template('pattern_stats.html', pattern_stats=pattern_stats_table, selected_product=product, products=products)
 
-#retrain arbitrage models: call the function train_arbitrage_model()
 @app.route('/retrain_arbitrage_models', methods=['POST'])
 @login_required
 def retrain_arbitrage_models():
+    import glob, os
+    model_dir = 'models'
+    # Delete all old models and pattern_stats ONLY when retraining
+    for f in glob.glob(os.path.join(model_dir, 'arbitrage_rf_*.joblib')):
+        os.remove(f)
+    for f in glob.glob(os.path.join(model_dir, 'pattern_stats_*.csv')):
+        os.remove(f)
     try:
-        train_arbitrage_model()
-        return jsonify({'status': 'success', 'message': 'Arbitrage models retrained and saved'})
+        train_arbitrage_model(model_dir=model_dir)
+        return jsonify({'status': 'success', 'message': 'Arbitrage models retrained and saved locally.'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Error during retraining: {str(e)}'}), 500
 

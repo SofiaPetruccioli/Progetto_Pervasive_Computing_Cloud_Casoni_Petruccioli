@@ -15,6 +15,7 @@
 </head>
 <body>
     <h1>Market Arbitrage Patterns (ML)</h1>
+    <h3 style="text-align: center; color: #1976D2; font-weight: 500; margin-top: 0; margin-bottom: 18px;">Top five recurrent patterns</h3>
     <div style="text-align:center; margin-bottom: 20px;">
         <form method="get" action="/pattern_stats" style="display:inline-block;">
             <label for="product-select">Select Product:</label>
@@ -33,18 +34,31 @@
     </script>
     <table>
         <tr>
+            <th>#</th>
             <th>Product</th>
-            <th>Market 1</th>
-            <th>Market 2</th>
+            <th>Buyer Market</th>
+            <th>Buyer Avg Price</th>
+            <th>Seller Market</th>
+            <th>Seller Avg Price</th>
             <th>Arbitrage Frequency</th>
             <th>Average Profit</th>
             <th>Average Profit %</th>
         </tr>
         {% for row in pattern_stats %}
         <tr>
+            <td>{{ loop.index }}</td>
             <td>{{ selected_product }}</td>
-            <td>{{ row.market1 }}</td>
-            <td>{{ row.market2 }}</td>
+            {% if row.avg_price1 <= row.avg_price2 %}
+                <td>{{ row.market1 }}</td>
+                <td>{{ row.avg_price1 | round(2) }}</td>
+                <td>{{ row.market2 }}</td>
+                <td>{{ row.avg_price2 | round(2) }}</td>
+            {% else %}
+                <td>{{ row.market2 }}</td>
+                <td>{{ row.avg_price2 | round(2) }}</td>
+                <td>{{ row.market1 }}</td>
+                <td>{{ row.avg_price1 | round(2) }}</td>
+            {% endif %}
             <td>{{ (row.arbitrage_freq * 100) | round(1) }}%</td>
             <td>{{ row.avg_profit | round(2) }}</td>
             <td>{{ row.avg_profit_percent | round(2) }}</td>
@@ -53,7 +67,7 @@
     </table>
     <div style="display: flex; justify-content: center; margin-top: 40px; margin-bottom: 40px;">
         <a href="/logout" class="logout-btn">Logout</a>
-        <a href="/arbitrage_simple" class="back-btn">⬅️ Back to Previous Page<</a>
+        <a href="/arbitrage_simple" class="back-btn">⬅️ Back to Previous Page</a>
     </div>
 </body>
 </html> 
