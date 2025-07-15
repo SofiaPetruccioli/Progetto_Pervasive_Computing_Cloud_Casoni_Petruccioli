@@ -1,4 +1,4 @@
-/* --------------- General Page Styles --------------- */
+/*  General Page Styles  */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -75,10 +75,10 @@ label {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #0056b3;
-  min-height: 200px; /* opzionale: altezza minima */
+  min-height: 200px;
 }
 
-/* ------------ Flex Container per Grafico e Statistiche ------------ */
+/*  Flex Container graph and stats */
 .chart-wrapper {
   display: flex;
   flex-wrap: wrap;
@@ -88,7 +88,7 @@ label {
   justify-content: center;
 }
 
-/* ------------ Area Grafico (canvas) ------------ */
+/*  Area graph (canvas)  */
 .chart-area {
   flex: 0  0 1000px;
   min-width: 1000px;
@@ -105,7 +105,7 @@ label {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   border: 1px solid #0056b3;
 }
-/* ------------ Box Statistiche (affiancato a dx del grafico) ------------ */
+/*  Statistics Box (aligned to the right of the chart)  */
 #stats {
   flex: 0 1 280px;
   background: #fff;
@@ -130,7 +130,7 @@ label {
   font-weight: bold;
 }
 
-/* ------------ Contenitore Legenda (sotto grafico) ------------ */
+/*  Legend Container (below chart)  */
 .legend-wrapper {
   max-width: 100%;
   overflow-x: auto;
@@ -237,7 +237,7 @@ select {
 select:focus {
   outline: none;
   border-color: #64a7e0;
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); /* azzurro soft */
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); 
   background-color: #e9f4fb;
 }
 
@@ -248,11 +248,10 @@ select option {
   color: #222;
 }
 
-/* Solo su desktop alcuni browser permettono questo */
 select option:checked {
   font-size: 1.05rem;
   font-weight: 700;
-  background-color: #d9effc !important; /* colore più soft della selezione */
+  background-color: #d9effc ;
   color: #0d47a1;
 }
 

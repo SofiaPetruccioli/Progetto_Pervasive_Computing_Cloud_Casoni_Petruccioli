@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Cumulative Profit Chart</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
     <style>
         body {
             background: linear-gradient(120deg, #e0eafc, #cfdef3);
@@ -27,13 +27,19 @@
             display: block;
         }
         .chart-box {
-            max-width: 900px;
+            max-width: 1400px;
+            min-width: 1200px;
             margin: 32px auto 0 auto;
             background: #fff;
             border-radius: 30px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.07);
             padding: 60px 40px 40px 40px;
-        } 
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +108,6 @@
         });
     </script>
 </body>
-<a href="/logout" class="logout-btn">Logout</a>
+<a href="/logout_admin" class="logout-btn">Logout</a>
 <a href="/arbitrage_simple" class="back-btn">⬅️ Back to Previous Page</a>
 </html>

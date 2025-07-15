@@ -199,9 +199,9 @@
               enabled: true,
               mode: 'nearest',
               intersect: false,
-              position: 'nearest', // oppure 'average', 'point'
-              yAlign: 'top', // puoi usare anche 'bottom', 'center'
-              xAlign: 'center', // puoi usare anche 'left', 'right'
+              position: 'nearest', 
+              yAlign: 'top', 
+              xAlign: 'center', 
               padding: 10,
               caretPadding: 5
 }
@@ -322,7 +322,7 @@
   function goBackAndReload() {
     const referrer = document.referrer;
     if (referrer) {
-      window.location.href = referrer;  // forza caricamento pagina precedente (con refresh)
+      window.location.href = referrer;  // (refresh)
     } else {
       window.history.back(); // fallback
     }

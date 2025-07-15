@@ -43,7 +43,7 @@ button:hover {
     background-color: #218838;
 }
 
-/* Messaggio di errore */
+/* Error message */
 .error-msg {
     background-color: #ffe6e6;
     color: #b30000;
@@ -57,7 +57,7 @@ button:hover {
     transition: opacity 0.5s ease-out;
 }
 
-/* Bottone mostra/nascondi password */
+/* Show/hide password button */
 .password-wrapper {
     position: relative;
 }

@@ -60,7 +60,7 @@
   function goBackAndReload() {
     const referrer = document.referrer;
     if (referrer) {
-      window.location.href = referrer;  // forza caricamento pagina precedente (con refresh)
+      window.location.href = referrer;  // (refresh)
     } else {
       window.history.back(); // fallback
     }

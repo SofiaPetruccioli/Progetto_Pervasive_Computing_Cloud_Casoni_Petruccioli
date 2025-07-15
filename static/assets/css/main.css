@@ -231,7 +231,7 @@ select {
 select:focus {
   outline: none;
   border-color: #64a7e0;
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); /* azzurro soft */
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); 
   background-color: #e9f4fb;
 }
 
@@ -242,7 +242,6 @@ select option {
   color: #222;
 }
 
-/* Solo su desktop alcuni browser permettono questo */
 select option:checked {
   font-size: 1.05rem;
   font-weight: 700;

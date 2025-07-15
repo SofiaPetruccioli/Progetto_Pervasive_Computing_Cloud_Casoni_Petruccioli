@@ -1,4 +1,4 @@
-/* --------------- General Page Styles --------------- */
+/*  General Page Styles  */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -74,32 +74,32 @@ select:focus {
   color: #335c14;
 }
 
-/* ------------------- Main Container ------------------- */
+/*  Main Container  */
 .container {
   background: white;
   height: 90vh;
   padding: 2em;
   max-width: 1800px;
   margin: auto;
-  border: 3px solid #0056b3; /* bordo verde scuro */
+  border: 3px solid #0056b3; 
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   width: 100%;
   box-sizing: border-box;
 }
 
-/* ------------ Flex Container per Grafico e Statistiche ------------ */
+/*  Flex Container graph and stats  */
 .chart-wrapper {
   display: flex;
-  flex-wrap: nowrap; /* non va a capo */
+  flex-wrap: nowrap; 
   gap: 20px;
   width: 100%;
-  height: 700px; /* Altezza fissa */
-  overflow: auto; /* Scroll orizzontale e verticale */
+  height: 700px; 
+  overflow: auto; 
   align-items: flex-start;
   justify-content: flex-start;
 }
-/* ------------ Area Grafico (canvas) ------------ */
+/*  Area graph (canvas)  */
 .chart-area {
   flex: 0  0 1000px;
   min-width: 1000px;
@@ -116,7 +116,7 @@ select:focus {
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
-/* ------------ Box Statistiche (affiancato a dx del grafico) ------------ */
+/*  Statistics Box (aligned to the right of the chart)  */
 #stats {
   background: #fff;
   flex: 0 0 300px;
@@ -141,7 +141,7 @@ select:focus {
   font-weight: bold;
 }
 
-/* ------------ Contenitore Legenda (sotto grafico) ------------ */
+/*  Legend Container (below chart)  */
 .legend-wrapper {
   width: 100%;
   background: #ffffff;

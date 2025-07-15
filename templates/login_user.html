@@ -28,7 +28,7 @@
   </div>
 
   <script>
-    // Nasconde il messaggio di errore dopo 3s
+    // Hides the error message after 3s
     window.addEventListener('DOMContentLoaded', () => {
       const errorBox = document.getElementById('error-box');
       if (errorBox) {
@@ -39,13 +39,13 @@
       }
     });
 
-    // Mostra/Nasconde password
+    // Toggle password visibility
     function togglePassword() {
       const pwd = document.getElementById('password');
       pwd.type = pwd.type === 'password' ? 'text' : 'password';
     }
 
-    // Validazione base JS
+    // Basic JS validation
     function validateForm() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -54,7 +54,6 @@
         return false;
       }
 
-      // Optional: blocca tasto dopo invio
       const btn = document.getElementById('login-btn');
       btn.disabled = true;
       btn.textContent = 'Logging in...';
@@ -68,7 +67,7 @@
   function goBackAndReload() {
     const referrer = document.referrer;
     if (referrer) {
-      window.location.href = referrer;  // forza caricamento pagina precedente (con refresh)
+      window.location.href = referrer;  //  ( refresh)
     } else {
       window.history.back(); // fallback
     }

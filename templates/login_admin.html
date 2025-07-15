@@ -28,7 +28,7 @@
   </div>
 
   <script>
-    // Fade-out del messaggio di errore
+    // Fade-out of the error message
     window.addEventListener('DOMContentLoaded', () => {
       const errorBox = document.getElementById('error-box');
       if (errorBox) {
@@ -39,13 +39,13 @@
       }
     });
 
-    // Mostra/Nasconde la password
+    // Show/Hide password
     function togglePassword() {
       const pwd = document.getElementById('password');
       pwd.type = pwd.type === 'password' ? 'text' : 'password';
     }
 
-    // Validazione base e blocco doppio submit
+    // Basic validation and prevent double submit
     function validateForm() {
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -67,7 +67,7 @@
   function goBackAndReload() {
     const referrer = document.referrer;
     if (referrer) {
-      window.location.href = referrer;  // forza caricamento pagina precedente (con refresh)
+      window.location.href = referrer;  //  ( refresh)
     } else {
       window.history.back(); // fallback
     }

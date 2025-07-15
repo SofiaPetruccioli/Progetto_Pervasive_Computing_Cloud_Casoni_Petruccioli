@@ -7,7 +7,7 @@
 </head>
 <body>
   <div class="login-box">
-    <div class="login-title">Register New User</div>
+    <div class="login-title">Register New Access Rights</div>
 
     {% if message %}
       <div class="error-msg">{{ message }}</div>
@@ -40,7 +40,7 @@
         setTimeout(() => {
           box.style.opacity = '0';
           setTimeout(() => box.remove(), 500);
-        }, 3000); // 3 secondi
+        }, 3000); // 3 sec
       }
     });
   });

@@ -60,7 +60,7 @@
 
     const generateColor = () => `rgb(${Math.random()*200|0},${Math.random()*200|0},${Math.random()*200|0})`;
 
-    // Popola la select dei prodotti
+    // Populate the product select dropdown
     Object.keys(rawData).forEach(product => {
       const opt = document.createElement('option');
       opt.value = product;
@@ -257,15 +257,14 @@
     });
 
     resetButton.addEventListener('click', () => {
-    if (currentProduct) renderChart(currentProduct); // mostra subito livello state
+    if (currentProduct) renderAggregatedChart(currentProduct); // show base aggregated view
     });
 
-    // --- AVVIO AUTOMATICO ---
-    // --- AVVIO AUTOMATICO ---
+    // --- automated  start ---
 if (selectedProduct && selectedState && rawData[selectedProduct]?.states[selectedState]) {
   select.value = selectedProduct;
   
-  // Solo un dataset per quello stato
+  // Only selected state
   currentProduct = selectedProduct;
   currentState = selectedState;
   currentDistrict = null;
