@@ -469,6 +469,79 @@ def forecast_page():
                            message=None)
 
 
+#get data for the forecast
+@app.route('/forecast_user', methods=['GET'])
+@login_required
+def forecast_page_user():
+    product = request.args.get('product')
+    all_products = set()
+    records = []
+
+    docs = db.collection('commodities').stream()
+    for doc in docs:
+        content = doc.to_dict()
+        for r in content.get('readings', []):
+            all_products.add(r['commodity_name'])
+            if product and r['commodity_name'] == product:
+                try:
+                    r['date'] = pd.to_datetime(r['date'])
+                    r['modal_price'] = float(r['modal_price'])
+                    records.append(r)
+                except:
+                    continue
+
+    if not product:
+        return render_template('forecast_user.html', products=sorted(all_products), selected=None, data=None, message=None)
+
+    df = pd.DataFrame(records)
+    ts = df.groupby('date')['modal_price'].mean().reset_index()
+    ts.rename(columns={'date': 'ds', 'modal_price': 'y'}, inplace=True)
+    ts['floor'] = 0
+
+    bucket_name = "my-forecast-models-bucket"
+    blob_name = f"models/prophet_{product.replace(' ', '_')}.joblib"
+    storage_client = storage.Client(credentials=credentials)
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    if not blob.exists(storage_client):
+        if len(ts) < 35:
+            return render_template('forecast_user.html', products=sorted(all_products), selected=product,
+                                   data=None, message=f"Insufficient number of samples for '{product}'")
+
+        model = Prophet(
+            growth='linear',
+            seasonality_mode='additive',
+            changepoint_prior_scale=0.03,
+            seasonality_prior_scale=2
+        )
+        model.fit(ts)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmpfile:
+            joblib.dump(model, tmpfile.name)
+            blob.upload_from_filename(tmpfile.name)
+    else:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".joblib") as tmpfile:
+            blob.download_to_filename(tmpfile.name)
+            model = joblib.load(tmpfile.name)
+
+    future = model.make_future_dataframe(periods=30)
+    future['floor'] = 0
+    forecast = model.predict(future)[['ds', 'yhat']].tail(30)
+    forecast['tipo'] = 'previsione'
+    forecast.rename(columns={'yhat': 'y'}, inplace=True)
+
+    storico = ts[['ds', 'y']].copy()
+    storico['tipo'] = 'storico'
+
+    combined = pd.concat([storico, forecast])
+
+    return render_template('forecast_user.html',
+                           products=sorted(all_products),
+                           selected=product,
+                           data=combined.to_dict(orient='records'),
+                           message=None)
+
 #update forecast models
 @app.route('/aggiorna_modelli')
 @login_required
@@ -616,6 +689,100 @@ def arbitrage_page():
         selected_product=selected_product
     )
 
+
+#Daily arbitrage opportunities
+@app.route('/arbitrage_simple_user')
+@login_required
+def arbitrage_page_user():
+    records = []
+
+    # Get data from Firestore
+    docs = db.collection('commodities').stream()
+    for doc in docs:
+        content = doc.to_dict()
+        for r in content.get('readings', []):
+            try:
+                # Force the date to a readable string
+                date_str = str(r['date']) if not isinstance(r['date'], str) else r['date']
+                records.append({
+                    'date': date_str,
+                    'commodity_name': r['commodity_name'],
+                    'market': r['market'],
+                    'modal_price': float(r['modal_price'])
+                })
+            except Exception:
+                continue  # ignore malformed records
+
+    df = pd.DataFrame(records)
+
+    if df.empty:
+        return render_template(
+            'arbitrage_simple_user.html',
+            opportunities=[],
+            products=[],
+            selected_product=None
+        )
+
+    # unique products for the dropdown menu
+    products = sorted(df['commodity_name'].dropna().unique().tolist())
+
+    # selected product via GET, fallback on the first available
+    selected_product = request.args.get('product')
+    if selected_product not in products:
+        selected_product = products[0] if products else None
+
+    # Filter data for the selected product
+    df = df[df['commodity_name'] == selected_product]
+
+    # Calculate the best daily opportunities
+    opps = []
+    for date, group in df.groupby('date'):
+        if len(group) < 2:
+            continue
+        max_row = group.loc[group['modal_price'].idxmax()]
+        min_row = group.loc[group['modal_price'].idxmin()]
+        profit = max_row['modal_price'] - min_row['modal_price']
+        profit_percent = (profit / min_row['modal_price']) * 100 if min_row['modal_price'] != 0 else 0
+
+        opps.append({
+            'date': date,
+            'commodity_name': selected_product,
+            'market_buy': min_row['market'],
+            'price_buy': round(min_row['modal_price'], 2),
+            'market_sell': max_row['market'],
+            'price_sell': round(max_row['modal_price'], 2),
+            'profit': round(profit, 2),
+            'profit_percent': round(profit_percent, 2)
+        })
+
+    df_opps = pd.DataFrame(opps)
+
+    # sort by date only if there are data
+    if not df_opps.empty and 'date' in df_opps.columns:
+        try:
+            df_opps['date_obj'] = pd.to_datetime(df_opps['date'], errors='coerce', format='%Y-%m-%d')
+            df_opps = df_opps.sort_values(by='date_obj').drop(columns=['date_obj'])
+        except Exception:
+            df_opps = df_opps.sort_values(by='date', errors='ignore')
+    else:
+        # ensure structure for template
+        df_opps = pd.DataFrame(columns=[
+            'date', 'commodity_name', 'market_buy', 'price_buy',
+            'market_sell', 'price_sell', 'profit', 'profit_percent'
+        ])
+
+    return render_template(
+        'arbitrage_simple_user.html',
+        opportunities=df_opps.to_dict(orient='records'),
+        products=products,
+        selected_product=selected_product
+    )
+
+
+
+
+
+
 # Arbitrage profit chart 
 @app.route('/arbitrage_chart')
 @login_required
@@ -683,6 +850,9 @@ def arbitrage_chart():
         dates=dates,
         profits=profits
     )
+
+
+
 
 #Arbitrage opportunities ML model: Random Forest
 def train_arbitrage_model(model_dir='models'):

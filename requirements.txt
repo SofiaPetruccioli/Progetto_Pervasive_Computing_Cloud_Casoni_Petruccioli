@@ -1,8 +1,11 @@
-flask
+Flask
 flask-login
+firebase-admin
 google-cloud-firestore
 google-cloud-storage
-joblib
-scikit-learn
+google-auth
 pandas
 prophet
+scikit-learn
+joblib
+gunicorn
