@@ -240,7 +240,7 @@ def graph():
 @app.route('/sensors/<sensor>', methods=['GET'])
 @login_required
 def read(sensor):
-    entity = db.collection('commodities').document(sensor).get()
+    entity = db.collection('commod').document(sensor).get()
     if entity.exists:
         d = entity.to_dict()
         return json.dumps(d.get('readings', [])), 200

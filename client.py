@@ -3,7 +3,7 @@ import requests
 import io
 import time
 
-SERVER_URL = "http://localhost:8080/sensors"
+SERVER_URL = "https://pervasive-api-1085959941354.europe-west1.run.app/sensors"
 CSV_PATH = "data/agridata_clean.csv"
 DELAY_SECONDS = 2  # interval between requests
 
