@@ -49,7 +49,7 @@ def new_data(sensor):
         'modal_price': float(data['modal_price']),
     }
 
-    doc_ref = db.collection('comm').document(sensor)
+    doc_ref = db.collection('prova').document(sensor)
     entity = doc_ref.get()
     if entity.exists:
         d = entity.to_dict()
@@ -240,7 +240,7 @@ def graph():
 @app.route('/sensors/<sensor>', methods=['GET'])
 @login_required
 def read(sensor):
-    entity = db.collection('commod').document(sensor).get()
+    entity = db.collection('commodities').document(sensor).get()
     if entity.exists:
         d = entity.to_dict()
         return json.dumps(d.get('readings', [])), 200
