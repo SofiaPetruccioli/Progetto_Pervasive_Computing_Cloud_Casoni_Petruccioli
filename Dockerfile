@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copia tutti i file del progetto
 COPY . .
-
+COPY secret.py .
 # Installa le dipendenze
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -14,4 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8080
 
 # Comando per eseguire l'app Flask con gunicorn
-CMD ["gunicorn", "-b", ":$PORT", "main:app"]
+CMD ["sh", "-c", "exec gunicorn -b :$PORT main:app"]
+
+
