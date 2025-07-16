@@ -32,6 +32,10 @@ login.login_view = '/homepage'
 
 db = firestore.Client.from_service_account_json('credentials.json')
 
+@app.route('/')
+def index():
+    return "Servizio OK! ✅"
+
 
 @app.route('/sensors/<sensor>', methods=['POST'])
 def new_data(sensor):

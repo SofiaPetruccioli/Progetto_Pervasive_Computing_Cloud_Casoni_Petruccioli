@@ -264,7 +264,7 @@
 if (selectedProduct && selectedState && rawData[selectedProduct]?.states[selectedState]) {
   select.value = selectedProduct;
   
-  // Only selected state
+  // Only selected st
   currentProduct = selectedProduct;
   currentState = selectedState;
   currentDistrict = null;
@@ -291,7 +291,7 @@ if (selectedProduct && selectedState && rawData[selectedProduct]?.states[selecte
   </script>
 
   <a href="/logout_admin" class="logout-btn">Logout</a>
-  <button onclick="goBackAndReload()" class="back-btn">⬅️ Back to Previous Page</button>
+  <button onclick="goBackAndReload()" class="back-btn">⬅️ Back to Previous Page</button> 
   <script>
     function goBackAndReload() {
       const referrer = document.referrer;
