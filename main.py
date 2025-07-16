@@ -49,7 +49,7 @@ def new_data(sensor):
         'modal_price': float(data['modal_price']),
     }
 
-    doc_ref = db.collection('prova').document(sensor)
+    doc_ref = db.collection('commodities').document(sensor)
     entity = doc_ref.get()
     if entity.exists:
         d = entity.to_dict()
