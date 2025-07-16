@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8080
 
 # Comando per eseguire l'app Flask con gunicorn
-CMD exec gunicorn -b :$PORT main:app
+CMD ["gunicorn", "-b", ":8080", "main:app"]
