@@ -102,7 +102,7 @@ def load_user(username):
     return None
 
 
-@app.route('/')
+
 @app.route('/homepage')
 def home():
     return render_template('homepage.html')
