@@ -32,9 +32,7 @@ login.login_view = '/homepage'
 
 db = firestore.Client.from_service_account_json('credentials.json')
 
-@app.route('/')
-def index():
-    return "Servizio OK! ✅"
+
 
 
 @app.route('/sensors/<sensor>', methods=['POST'])
@@ -102,7 +100,7 @@ def load_user(username):
     return None
 
 
-
+@app.route('/')
 @app.route('/homepage')
 def home():
     return render_template('homepage.html')
@@ -1019,6 +1017,6 @@ def retrain_arbitrage_models():
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Error during retraining: {str(e)}'}), 500
 
-#if __name__ == '__main__':
-#    app.run(host="0.0.0.0", port=8080, debug=True)
+if __name__ == '__main__':
+  app.run(host="0.0.0.0", port=8080, debug=True)
 
