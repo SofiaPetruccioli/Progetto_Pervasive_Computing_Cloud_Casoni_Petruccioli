@@ -34,7 +34,6 @@ db = firestore.Client.from_service_account_json('credentials.json')
 
 
 
-
 @app.route('/sensors/<sensor>', methods=['POST'])
 def new_data(sensor):
     data = request.values
@@ -48,8 +47,8 @@ def new_data(sensor):
         'max_price': float(data['max_price']),
         'modal_price': float(data['modal_price']),
     }
-
-    doc_ref = db.collection('commodities').document(sensor)
+ 
+    doc_ref = db.collection('prova2').document(sensor)
     entity = doc_ref.get()
     if entity.exists:
         d = entity.to_dict()
@@ -60,8 +59,37 @@ def new_data(sensor):
             'state': new_entry['state'],
             'readings': [new_entry]
         })
-
+ 
     return 'ok', 200
+ 
+@app.route('/sensors/<sensor>', methods=['GET'])
+@login_required
+def read_sensor(sensor):
+    entity = db.collection('prova2').document(sensor).get()
+    if entity.exists:
+        d = entity.to_dict()
+        return json.dumps(d.get('readings', [])), 200
+    else:
+        return 'not found', 404
+    
+
+@app.route('/sensors_all', methods=['GET'])
+@login_required
+def read_all():
+    docs = db.collection('prova2').stream()
+    all_readings = []
+    for doc in docs:
+        d = doc.to_dict()
+        all_readings.extend(d.get('readings', []))
+    return jsonify(all_readings)
+
+
+
+
+
+
+
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

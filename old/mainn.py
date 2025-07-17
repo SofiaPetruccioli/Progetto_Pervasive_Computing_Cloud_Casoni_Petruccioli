@@ -575,3 +575,75 @@ if __name__ == '__main__':
 
     app.run(host="0.0.0.0", port=8080, debug=True)
 
+
+'''
+log_messages = []  
+
+@app.route('/sensors/<sensor>', methods=['POST'])
+def new_data(sensor):
+    global log_messages
+
+    data = request.values
+    new_entry = {
+        'date': data['date'],
+        'commodity_name': data['commodity_name'],
+        'state': data['state'],
+        'district': data['district'],
+        'market': data['market'],
+        'min_price': float(data['min_price']),
+        'max_price': float(data['max_price']),
+        'modal_price': float(data['modal_price']),
+    }
+
+    # Save to Firestore (collection')
+    doc_ref = db.collection('prova1').document(sensor)
+    entity = doc_ref.get()
+    if entity.exists:
+        d = entity.to_dict()
+        d.setdefault('readings', []).append(new_entry)
+        doc_ref.set(d)
+    else:
+        doc_ref.set({
+            'state': new_entry['state'],
+            'readings': [new_entry]
+        })
+
+    # Save log in memory
+    log_line = f"""✅ Recieved Data:
+Sensor: {sensor}
+Date: {new_entry['date']}
+Commodity: {new_entry['commodity_name']}
+State: {new_entry['state']}
+District: {new_entry['district']}
+Market: {new_entry['market']}
+Min: {new_entry['min_price']}
+Max: {new_entry['max_price']}
+Modal: {new_entry['modal_price']}"""
+    
+    log_messages.append(log_line)
+    log_messages = log_messages[-50:]  # last 50 messages only
+
+    # HTML response (blank page with received data)
+    return f"""
+    <html>
+    <head><title>Conferma Ricezione</title></head>
+    <body style="font-family: monospace; padding: 20px;">
+        <h2>✅ Data received</h2>
+        <p><strong>Sensor:</strong> {sensor}</p>
+        <p><strong>Date:</strong> {new_entry['date']}</p>
+        <p><strong>Commodity:</strong> {new_entry['commodity_name']}</p>
+        <p><strong>State:</strong> {new_entry['state']}</p>
+        <p><strong>District:</strong> {new_entry['district']}</p>
+        <p><strong>Market:</strong> {new_entry['market']}</p>
+        <p><strong>Min Price:</strong> {new_entry['min_price']}</p>
+        <p><strong>Max Price:</strong> {new_entry['max_price']}</p>
+        <p><strong>Modal Price:</strong> {new_entry['modal_price']}</p>
+        <hr>
+        <a href="/log">Vai ai log</a>
+    </body>
+    </html>
+    """, 200
+
+@app.route('/log')
+def view_log():
+    return render_template('log.html', logs=log_messages)'''

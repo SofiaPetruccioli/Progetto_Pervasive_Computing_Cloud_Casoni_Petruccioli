@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+    <title>Server Log</title>
+    <meta http-equiv="refresh" content="2"> <!-- auto-refresh ogni 2 sec -->
+</head>
+<body style="font-family: monospace; background: #f4f4f4; padding: 20px;">
+    <h2>Last received</h2>
+    <div>
+        {% for log in logs %}
+            <div>{{ log }}</div>
+        {% endfor %}
+    </div>
+</body>
+</html>
